@@ -27,7 +27,7 @@ const features = [
   {
     icon: Check,
     title: 'CE/FDA Approved Products',
-    description: 'All our products adhere to manufacturers' guidelines and come with CE/FDA approvals, ensuring the highest quality and safety standards.'
+    description: 'All our products adhere to manufacturers\' guidelines and come with CE/FDA approvals, ensuring the highest quality and safety standards.'
   },
   {
     icon: Clock,

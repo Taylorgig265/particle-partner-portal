@@ -8,7 +8,7 @@ const features = [
   {
     icon: Shield,
     title: 'Quality Assured',
-    description: 'All our products adhere to manufacturers' guidelines with CE/FDA approvals and a 12-month warranty.'
+    description: 'All our products adhere to manufacturers\' guidelines with CE/FDA approvals and a 12-month warranty.'
   },
   {
     icon: Users,
@@ -18,7 +18,7 @@ const features = [
   {
     icon: Award,
     title: 'Decade of Experience',
-    description: 'With over 10 years in the industry, we've built a reputation for reliability and excellence.'
+    description: 'With over 10 years in the industry, we\'ve built a reputation for reliability and excellence.'
   }
 ];
 
