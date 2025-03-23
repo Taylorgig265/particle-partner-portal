@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				particle: {
+					navy: '#0A2342',
+					gold: '#B8860B',
+					light: '#F5F7FA',
+					secondary: '#2A4B8C',
+					accent: '#D4AF37',
+					white: '#FFFFFF',
+					gray: '#F0F2F5'
 				}
 			},
 			borderRadius: {
@@ -84,11 +94,45 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'fade-in-up': {
+					'0%': { opacity: '0', transform: 'translateY(20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'fade-in-down': {
+					'0%': { opacity: '0', transform: 'translateY(-20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'scale-in': {
+					'0%': { opacity: '0', transform: 'scale(0.95)' },
+					'100%': { opacity: '1', transform: 'scale(1)' }
+				},
+				'slide-in-left': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				'slide-in-right': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'fade-in-up': 'fade-in-up 0.5s ease-out',
+				'fade-in-down': 'fade-in-down 0.5s ease-out',
+				'scale-in': 'scale-in 0.5s ease-out',
+				'slide-in-left': 'slide-in-left 0.5s ease-out',
+				'slide-in-right': 'slide-in-right 0.5s ease-out',
+			},
+			fontFamily: {
+				inter: ['Inter', 'sans-serif'],
+				roboto: ['Roboto', 'sans-serif']
 			}
 		}
 	},
