@@ -50,14 +50,14 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Define the form schema with Zod
+// Define the form schema with Zod - updated to match the product model
 const productFormSchema = z.object({
   name: z.string().min(2, { message: "Product name must be at least 2 characters." }),
-  description: z.string().optional(),
-  fullDescription: z.string().optional(),
+  description: z.string().optional().nullable(),
+  fullDescription: z.string().optional().nullable(),
   price: z.coerce.number().min(0.01, { message: "Price must be greater than 0." }),
   category: z.string().min(1, { message: "Category is required." }),
-  image_url: z.string().optional(),
+  image_url: z.string().optional().nullable(),
   in_stock: z.boolean().default(true),
 });
 
@@ -116,7 +116,7 @@ const RichTextEditor = ({
         </Button>
       </div>
       <Textarea
-        value={value}
+        value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         className="min-h-[200px] font-mono text-sm"
         placeholder="Enter HTML content here..."
@@ -125,7 +125,7 @@ const RichTextEditor = ({
         <Label>Preview:</Label>
         <div 
           className="border rounded-md p-4 mt-2 prose max-w-full"
-          dangerouslySetInnerHTML={{ __html: value }}
+          dangerouslySetInnerHTML={{ __html: value || '' }}
         />
       </div>
     </div>
@@ -267,6 +267,7 @@ const ProductForm = ({
                   <FormControl>
                     <Textarea 
                       {...field} 
+                      value={field.value || ''}
                       placeholder="Brief description for product listings"
                       rows={3}
                     />

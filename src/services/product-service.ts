@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
@@ -77,12 +76,18 @@ export const useProducts = () => {
       if (error) throw new Error(error.message);
       
       if (data) {
-        setProducts(data as Product[]);
+        // Map database fields to Product interface
+        const mappedProducts = data.map((item: any) => ({
+          ...item,
+          fullDescription: item.full_description || ''
+        }));
+        
+        setProducts(mappedProducts as Product[]);
         
         // Group products by category
         const categoryMap = new Map<string, Product[]>();
         
-        data.forEach((product: Product) => {
+        mappedProducts.forEach((product: Product) => {
           if (product.category) {
             if (!categoryMap.has(product.category)) {
               categoryMap.set(product.category, []);
@@ -141,9 +146,15 @@ export const useAdminProducts = () => {
   
   const addProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Map the fullDescription field to full_description for database compatibility
+      const dbProduct = {
+        ...product,
+        full_description: product.fullDescription,
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([dbProduct])
         .select();
       
       if (error) throw new Error(error.message);
@@ -168,9 +179,15 @@ export const useAdminProducts = () => {
   
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     try {
+      // Map the fullDescription field to full_description for database compatibility
+      const dbUpdates = {
+        ...updates,
+        full_description: updates.fullDescription,
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select();
       

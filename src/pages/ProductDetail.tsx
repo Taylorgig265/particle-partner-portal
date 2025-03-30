@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +36,12 @@ const ProductDetail = () => {
         if (error) throw new Error(error.message);
         
         if (data) {
-          setProduct(data as Product);
+          // Map the database fields to the Product interface
+          const mappedProduct: Product = {
+            ...data,
+            fullDescription: data.full_description || ''
+          };
+          setProduct(mappedProduct);
         } else {
           throw new Error("Product not found");
         }
@@ -93,6 +97,7 @@ const ProductDetail = () => {
     );
   }
 
+  // In the JSX, update the product details section to use fullDescription instead of description
   return (
     <AnimatePresence>
       <motion.div
@@ -115,6 +120,7 @@ const ProductDetail = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* Product image section */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -133,6 +139,7 @@ const ProductDetail = () => {
                 </div>
               </motion.div>
               
+              {/* Product info section */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -209,6 +216,7 @@ const ProductDetail = () => {
               </motion.div>
             </div>
             
+            {/* Product full description section */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
