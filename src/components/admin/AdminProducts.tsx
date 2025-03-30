@@ -33,8 +33,88 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminProducts, Product } from "@/services/product-service";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+
+// Rich text editor component
+const RichTextEditor = ({ 
+  value, 
+  onChange 
+}: { 
+  value: string, 
+  onChange: (value: string) => void 
+}) => {
+  return (
+    <div className="rich-text-editor">
+      <div className="flex gap-2 mb-2">
+        <Button
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => onChange(value + '<h2>Heading</h2>')}
+        >
+          H2
+        </Button>
+        <Button
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => onChange(value + '<p>Paragraph</p>')}
+        >
+          P
+        </Button>
+        <Button
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => onChange(value + '<strong>Bold text</strong>')}
+        >
+          B
+        </Button>
+        <Button
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => onChange(value + '<em>Italic text</em>')}
+        >
+          I
+        </Button>
+        <Button
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => onChange(value + '<ul><li>List item</li></ul>')}
+        >
+          List
+        </Button>
+      </div>
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-h-[200px] font-mono text-sm"
+        placeholder="Enter HTML content here..."
+      />
+      <div className="mt-4">
+        <Label>Preview:</Label>
+        <div 
+          className="border rounded-md p-4 mt-2 prose max-w-full"
+          dangerouslySetInnerHTML={{ __html: value }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const ProductForm = ({ 
   product, 
@@ -45,9 +125,11 @@ const ProductForm = ({
   onSubmit: (data: any) => void, 
   onCancel: () => void 
 }) => {
+  const [activeTab, setActiveTab] = useState("basic");
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
+    fullDescription: product?.fullDescription || "",
     price: product?.price || "",
     category: product?.category || "",
     image_url: product?.image_url || "",
@@ -71,6 +153,13 @@ const ProductForm = ({
     }
   };
 
+  const handleFullDescriptionChange = (value: string) => {
+    setFormData({
+      ...formData,
+      fullDescription: value
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -81,75 +170,104 @@ const ProductForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Product Name</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows={3}
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
-          <Input
-            id="price"
-            name="price"
-            type="number"
-            step="0.01"
-            value={formData.price}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="image_url">Image URL</Label>
-          <Input
-            id="image_url"
-            name="image_url"
-            value={formData.image_url}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Input
-          id="in_stock"
-          name="in_stock"
-          type="checkbox"
-          className="w-4 h-4"
-          checked={formData.in_stock as boolean}
-          onChange={handleChange}
-        />
-        <Label htmlFor="in_stock">In Stock</Label>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsTrigger value="description">Descriptions</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="basic" className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Product Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image_url">Image URL</Label>
+              <Input
+                id="image_url"
+                name="image_url"
+                value={formData.image_url}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Input
+              id="in_stock"
+              name="in_stock"
+              type="checkbox"
+              className="w-4 h-4"
+              checked={formData.in_stock as boolean}
+              onChange={handleChange}
+            />
+            <Label htmlFor="in_stock">In Stock</Label>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="description" className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="description">Short Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Brief description for product listings"
+            />
+            <FormDescription>
+              A short summary displayed on product listings (max 150 characters recommended)
+            </FormDescription>
+          </div>
+          
+          <div className="space-y-2 pt-4 border-t">
+            <Label className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Full Description (Rich Text)
+            </Label>
+            <RichTextEditor 
+              value={formData.fullDescription} 
+              onChange={handleFullDescriptionChange} 
+            />
+            <FormDescription>
+              Detailed product description with formatting, displayed on the product details page
+            </FormDescription>
+          </div>
+        </TabsContent>
+      </Tabs>
       
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
@@ -218,7 +336,7 @@ const AdminProducts = () => {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>
@@ -327,7 +445,7 @@ const AdminProducts = () => {
       
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[750px]">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>
