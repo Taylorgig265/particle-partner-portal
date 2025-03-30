@@ -3,7 +3,20 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, PieChart, Sector, Cell, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { 
+  BarChart, 
+  PieChart, 
+  Pie,
+  Sector, 
+  Cell, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from "recharts";
 import { useAdminProducts, useAdminOrders, useAdminCustomers } from "@/services/product-service";
 import { Package, ShoppingCart, Users, TrendingUp, DollarSign } from "lucide-react";
 
