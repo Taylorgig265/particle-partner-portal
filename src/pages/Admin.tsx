@@ -5,13 +5,15 @@ import {
   Package, 
   ShoppingCart, 
   Users,
-  Home
+  Home,
+  BarChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminProducts from "@/components/admin/AdminProducts";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
+import AdminStatistics from "@/components/admin/AdminStatistics";
 import { Link } from "react-router-dom";
 
 const Admin = () => {
@@ -39,7 +41,7 @@ const Admin = () => {
         </header>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 h-14">
+          <TabsList className="grid w-full grid-cols-4 h-14">
             <TabsTrigger value="products" className="flex items-center space-x-2">
               <Package size={18} />
               <span>Products</span>
@@ -51,6 +53,10 @@ const Admin = () => {
             <TabsTrigger value="customers" className="flex items-center space-x-2">
               <Users size={18} />
               <span>Customers</span>
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center space-x-2">
+              <BarChart size={18} />
+              <span>Statistics</span>
             </TabsTrigger>
           </TabsList>
           
@@ -64,6 +70,10 @@ const Admin = () => {
           
           <TabsContent value="customers" className="bg-white p-6 rounded-lg shadow">
             <AdminCustomers />
+          </TabsContent>
+          
+          <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
+            <AdminStatistics />
           </TabsContent>
         </Tabs>
       </div>
