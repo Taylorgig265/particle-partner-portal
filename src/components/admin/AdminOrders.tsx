@@ -25,24 +25,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye } from "lucide-react";
-import { useAdminOrders, OrderItem } from "@/services/product-service";
+import { Eye, Mail } from "lucide-react";
+import { useAdminOrders, QuoteItem } from "@/services/product-service";
 import { format } from "date-fns";
 
 const OrderStatusBadge = ({ status }: { status: string }) => {
   const statusColors = {
+    quote_requested: "bg-blue-100 text-blue-800",
+    quote_sent: "bg-purple-100 text-purple-800",
+    approved: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+    completed: "bg-teal-100 text-teal-800",
     pending: "bg-yellow-100 text-yellow-800",
-    processing: "bg-blue-100 text-blue-800",
-    shipped: "bg-purple-100 text-purple-800",
-    delivered: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
   };
   
   const color = statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800";
   
+  // Format the status text to be more readable
+  const formatStatus = (status: string) => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
   return (
     <span className={`px-2 py-1 rounded-full text-xs ${color}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {formatStatus(status)}
     </span>
   );
 };
@@ -50,7 +59,7 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
 const AdminOrders = () => {
   const { orders, loading, fetchOrderDetails, updateOrderStatus } = useAdminOrders();
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderItems, setOrderItems] = useState<QuoteItem[]>([]);
   const [orderItemsLoading, setOrderItemsLoading] = useState(false);
   
   const handleViewOrder = async (orderId: string) => {
@@ -75,7 +84,7 @@ const AdminOrders = () => {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Orders</h2>
+          <h2 className="text-xl font-bold">Quote Requests</h2>
         </div>
         <div className="space-y-2">
           {Array(5).fill(0).map((_, index) => (
@@ -89,17 +98,17 @@ const AdminOrders = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Orders ({orders.length})</h2>
+        <h2 className="text-xl font-bold">Quote Requests ({orders.length})</h2>
       </div>
       
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
+              <TableHead>Request ID</TableHead>
+              <TableHead>Contact Info</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead>Estimated Value</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -108,7 +117,7 @@ const AdminOrders = () => {
             {orders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-6 text-gray-500">
-                  No orders found.
+                  No quote requests found.
                 </TableCell>
               </TableRow>
             ) : (
@@ -118,8 +127,12 @@ const AdminOrders = () => {
                     {order.id.slice(0, 8)}...
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{order.user?.name || "Unknown"}</div>
-                    <div className="text-xs text-gray-500">{order.user?.email}</div>
+                    <div className="font-medium">
+                      {order.contact_details?.name || "Unknown"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {order.contact_details?.email}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {format(new Date(order.created_at), "MMM d, yyyy")}
@@ -132,28 +145,42 @@ const AdminOrders = () => {
                       defaultValue={order.status}
                       onValueChange={(value) => handleStatusChange(order.id, value)}
                     >
-                      <SelectTrigger className="w-32 h-8">
+                      <SelectTrigger className="w-36 h-8">
                         <SelectValue>
                           <OrderStatusBadge status={order.status} />
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="quote_requested">Quote Requested</SelectItem>
+                        <SelectItem value="quote_sent">Quote Sent</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleViewOrder(order.id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewOrder(order.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (order.contact_details?.email) {
+                            window.location.href = `mailto:${order.contact_details.email}?subject=Quote for Request #${order.id.slice(0, 8)}`;
+                          }
+                        }}
+                        disabled={!order.contact_details?.email}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -162,13 +189,13 @@ const AdminOrders = () => {
         </Table>
       </div>
       
-      {/* Order Details Sheet */}
+      {/* Quote Request Details Sheet */}
       <Sheet open={!!activeOrder} onOpenChange={(open) => !open && setActiveOrder(null)}>
         <SheetContent className="sm:max-w-xl">
           <SheetHeader>
-            <SheetTitle>Order Details</SheetTitle>
+            <SheetTitle>Quote Request Details</SheetTitle>
             <SheetDescription>
-              {activeOrder && `Order ID: ${activeOrder}`}
+              {activeOrder && `Request ID: ${activeOrder}`}
             </SheetDescription>
           </SheetHeader>
           
@@ -182,10 +209,10 @@ const AdminOrders = () => {
             ) : (
               <>
                 <div className="space-y-2">
-                  <div className="font-semibold">Items</div>
+                  <div className="font-semibold">Requested Items</div>
                   {orderItems.length === 0 ? (
                     <div className="text-center py-6 text-gray-500">
-                      No items found for this order.
+                      No items found for this request.
                     </div>
                   ) : (
                     orderItems.map((item) => (
@@ -217,18 +244,8 @@ const AdminOrders = () => {
                 
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Subtotal</span>
+                    <span className="text-gray-500">Estimated Value</span>
                     <span className="font-medium">
-                      ${orderItems.reduce((sum, item) => sum + (Number(item.price_at_purchase) * item.quantity), 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Shipping</span>
-                    <span className="font-medium">Calculated at checkout</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold mt-2">
-                    <span>Total</span>
-                    <span>
                       ${orderItems.reduce((sum, item) => sum + (Number(item.price_at_purchase) * item.quantity), 0).toFixed(2)}
                     </span>
                   </div>
@@ -237,14 +254,39 @@ const AdminOrders = () => {
                 <Separator className="my-4" />
                 
                 <div className="space-y-2">
-                  <div className="font-semibold">Shipping Address</div>
-                  <div className="text-gray-600 text-sm">
-                    {orders.find(o => o.id === activeOrder)?.shipping_address ? (
-                      <pre className="whitespace-pre-wrap">
-                        {JSON.stringify(orders.find(o => o.id === activeOrder)?.shipping_address, null, 2)}
-                      </pre>
+                  <div className="font-semibold">Contact Information</div>
+                  <div className="bg-gray-50 p-4 rounded-md text-sm space-y-2">
+                    {orders.find(o => o.id === activeOrder)?.contact_details ? (
+                      <>
+                        <div>
+                          <span className="font-medium">Name: </span>
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.name}
+                        </div>
+                        <div>
+                          <span className="font-medium">Email: </span>
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.email}
+                        </div>
+                        <div>
+                          <span className="font-medium">Phone: </span>
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.phone}
+                        </div>
+                        {orders.find(o => o.id === activeOrder)?.contact_details?.company && (
+                          <div>
+                            <span className="font-medium">Company: </span>
+                            {orders.find(o => o.id === activeOrder)?.contact_details?.company}
+                          </div>
+                        )}
+                        {orders.find(o => o.id === activeOrder)?.contact_details?.message && (
+                          <div className="mt-3">
+                            <div className="font-medium">Message:</div>
+                            <div className="mt-1 whitespace-pre-wrap">
+                              {orders.find(o => o.id === activeOrder)?.contact_details?.message}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <span className="text-gray-500">No shipping address provided.</span>
+                      <span className="text-gray-500">No contact details provided.</span>
                     )}
                   </div>
                 </div>

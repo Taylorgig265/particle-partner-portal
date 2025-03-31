@@ -23,22 +23,23 @@ export interface Category {
   products: Product[];
 }
 
-export interface Order {
+export interface QuoteRequest {
   id: string;
   user_id: string;
   status: string;
   total_amount: number;
   shipping_address: any;
+  contact_details: any;
   created_at: string;
   updated_at: string;
   user?: {
     name: string;
     email: string;
   };
-  items?: OrderItem[];
+  items?: QuoteItem[];
 }
 
-export interface OrderItem {
+export interface QuoteItem {
   id: string;
   order_id: string;
   product_id: string;
@@ -139,6 +140,80 @@ export const useProducts = () => {
   }, []);
 
   return { products, categories, loading, error, fetchProducts };
+};
+
+// Request Quote function
+export const useQuoteRequest = () => {
+  const submitQuoteRequest = async (
+    productId: string, 
+    quantity: number, 
+    contactDetails: {
+      name: string;
+      email: string;
+      phone: string;
+      company: string;
+      message: string;
+    }
+  ) => {
+    try {
+      // Get product details
+      const { data: productData, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      
+      if (productError) throw new Error(productError.message);
+      if (!productData) throw new Error("Product not found");
+      
+      // Generate anonymous user ID if there is no authenticated user
+      const anonymousId = crypto.randomUUID();
+      
+      // Create quote request (using orders table)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: anonymousId,
+          status: 'quote_requested',
+          total_amount: productData.price * quantity,
+          shipping_address: null,
+          contact_details: contactDetails
+        })
+        .select();
+      
+      if (orderError) throw new Error(orderError.message);
+      if (!orderData || orderData.length === 0) throw new Error("Failed to create quote request");
+      
+      // Create quote request item (using order_items table)
+      const { error: itemError } = await supabase
+        .from('order_items')
+        .insert({
+          order_id: orderData[0].id,
+          product_id: productId,
+          quantity: quantity,
+          price_at_purchase: productData.price
+        });
+      
+      if (itemError) throw new Error(itemError.message);
+      
+      toast({
+        title: "Quote Request Submitted",
+        description: "We have received your quote request and will contact you soon.",
+      });
+      
+      return orderData[0];
+    } catch (err: any) {
+      toast({
+        title: "Error Submitting Quote Request",
+        description: err.message,
+        variant: "destructive",
+      });
+      console.error("Error submitting quote request:", err);
+      throw err;
+    }
+  };
+  
+  return { submitQuoteRequest };
 };
 
 // Admin functions
@@ -251,7 +326,7 @@ export const useAdminProducts = () => {
 };
 
 export const useAdminOrders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -329,19 +404,19 @@ export const useAdminOrders = () => {
       if (error) throw new Error(error.message);
       
       toast({
-        title: "Order updated",
-        description: `Order status has been updated to ${status}.`,
+        title: "Quote request updated",
+        description: `Quote request status has been updated to ${status}.`,
       });
       
       fetchOrders();
       return data;
     } catch (err: any) {
       toast({
-        title: "Error updating order",
+        title: "Error updating quote request",
         description: err.message,
         variant: "destructive",
       });
-      console.error("Error updating order:", err);
+      console.error("Error updating quote request:", err);
       throw err;
     }
   };

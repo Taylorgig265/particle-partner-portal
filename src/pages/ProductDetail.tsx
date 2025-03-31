@@ -1,19 +1,30 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ShoppingCart, Shield, Truck, RotateCcw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Truck, RotateCcw, Shield, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
 import { Product } from '@/services/product-service';
+import QuoteRequestForm from '@/components/QuoteRequestForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -97,7 +108,6 @@ const ProductDetail = () => {
     );
   }
 
-  // In the JSX, update the product details section to use fullDescription instead of description
   return (
     <AnimatePresence>
       <motion.div
@@ -154,11 +164,11 @@ const ProductDetail = () => {
                     
                     {product.in_stock ? (
                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                        In Stock
+                        Available
                       </span>
                     ) : (
                       <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
-                        Out of Stock
+                        Currently Unavailable
                       </span>
                     )}
                   </div>
@@ -171,14 +181,27 @@ const ProductDetail = () => {
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                    <Button className="bg-particle-accent hover:bg-particle-accent/90 text-white btn-animation flex-1" size="lg">
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      Add to Cart
-                    </Button>
-                    
-                    <Button variant="outline" className="border-particle-navy text-particle-navy hover:bg-particle-navy hover:text-white flex-1" size="lg">
-                      Request Quote
-                    </Button>
+                    <Dialog open={isQuoteDialogOpen} onOpenChange={setIsQuoteDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-particle-navy hover:bg-particle-accent/90 text-white btn-animation flex-1" size="lg">
+                          <FileText className="mr-2 h-5 w-5" />
+                          Request Quote
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                          <DialogTitle>Request a Quote</DialogTitle>
+                          <DialogDescription>
+                            Fill out the form below and we'll contact you with pricing and availability for {product.name}.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <QuoteRequestForm 
+                          productId={product.id} 
+                          productName={product.name} 
+                          onSuccess={() => setIsQuoteDialogOpen(false)} 
+                        />
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
                 
@@ -188,8 +211,8 @@ const ProductDetail = () => {
                       <Truck className="h-5 w-5 text-particle-navy" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Free Shipping</p>
-                      <p className="text-sm text-gray-500">For orders over $1000</p>
+                      <p className="font-medium text-gray-900">Delivery Options</p>
+                      <p className="text-sm text-gray-500">Available upon request</p>
                     </div>
                   </div>
                   
@@ -198,8 +221,8 @@ const ProductDetail = () => {
                       <RotateCcw className="h-5 w-5 text-particle-navy" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">30-Day Returns</p>
-                      <p className="text-sm text-gray-500">Hassle-free returns</p>
+                      <p className="font-medium text-gray-900">Custom Options</p>
+                      <p className="text-sm text-gray-500">Specifications available</p>
                     </div>
                   </div>
                   
