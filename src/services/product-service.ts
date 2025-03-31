@@ -156,6 +156,8 @@ export const useQuoteRequest = () => {
     }
   ) => {
     try {
+      console.log("Submitting quote request:", { productId, quantity, contactDetails });
+      
       // Get product details
       const { data: productData, error: productError } = await supabase
         .from('products')
@@ -163,8 +165,17 @@ export const useQuoteRequest = () => {
         .eq('id', productId)
         .single();
       
-      if (productError) throw new Error(productError.message);
-      if (!productData) throw new Error("Product not found");
+      if (productError) {
+        console.error("Product error:", productError);
+        throw new Error(productError.message);
+      }
+      
+      if (!productData) {
+        console.error("Product not found");
+        throw new Error("Product not found");
+      }
+      
+      console.log("Product data retrieved:", productData);
       
       // Generate anonymous user ID if there is no authenticated user
       const anonymousId = crypto.randomUUID();
@@ -181,8 +192,17 @@ export const useQuoteRequest = () => {
         })
         .select();
       
-      if (orderError) throw new Error(orderError.message);
-      if (!orderData || orderData.length === 0) throw new Error("Failed to create quote request");
+      if (orderError) {
+        console.error("Order error:", orderError);
+        throw new Error(orderError.message);
+      }
+      
+      if (!orderData || orderData.length === 0) {
+        console.error("Failed to create quote request");
+        throw new Error("Failed to create quote request");
+      }
+      
+      console.log("Quote request created:", orderData);
       
       // Create quote request item (using order_items table)
       const { error: itemError } = await supabase
@@ -194,7 +214,12 @@ export const useQuoteRequest = () => {
           price_at_purchase: productData.price
         });
       
-      if (itemError) throw new Error(itemError.message);
+      if (itemError) {
+        console.error("Item error:", itemError);
+        throw new Error(itemError.message);
+      }
+      
+      console.log("Quote request item created successfully");
       
       toast({
         title: "Quote Request Submitted",
@@ -203,12 +228,12 @@ export const useQuoteRequest = () => {
       
       return orderData[0];
     } catch (err: any) {
+      console.error("Error submitting quote request:", err);
       toast({
         title: "Error Submitting Quote Request",
         description: err.message,
         variant: "destructive",
       });
-      console.error("Error submitting quote request:", err);
       throw err;
     }
   };
@@ -220,7 +245,15 @@ export const useQuoteRequest = () => {
 export const useAdminProducts = () => {
   const { products, categories, loading, error, fetchProducts } = useProducts();
   
-  const addProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+  const addProduct = async (product: {
+    name: string;
+    description?: string;
+    fullDescription?: string;
+    price: number;
+    image_url?: string;
+    category: string;
+    in_stock?: boolean;
+  }) => {
     try {
       // Map the fullDescription field to full_description for database compatibility
       const dbProduct = {

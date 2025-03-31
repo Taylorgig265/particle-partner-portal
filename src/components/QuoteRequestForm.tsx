@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuoteRequest } from '@/services/product-service';
+import { useToast } from '@/components/ui/use-toast';
 
 // Form validation schema
 const formSchema = z.object({
@@ -36,6 +37,7 @@ interface QuoteRequestFormProps {
 const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitQuoteRequest } = useQuoteRequest();
+  const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,6 +54,7 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
+      console.log("Form submitted with values:", values);
       await submitQuoteRequest(
         productId,
         values.quantity,
@@ -69,8 +72,17 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
       }
       
       form.reset();
+      toast({
+        title: "Quote Request Submitted",
+        description: "Thank you! We'll get back to you with a quote soon.",
+      });
     } catch (error) {
       console.error('Error submitting quote request:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting your quote request. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
