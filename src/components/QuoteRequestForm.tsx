@@ -67,15 +67,16 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
         }
       );
       
+      toast({
+        title: "Quote Request Submitted",
+        description: "Thank you! We'll get back to you with a quote soon.",
+      });
+      
       if (onSuccess) {
         onSuccess();
       }
       
       form.reset();
-      toast({
-        title: "Quote Request Submitted",
-        description: "Thank you! We'll get back to you with a quote soon.",
-      });
     } catch (error) {
       console.error('Error submitting quote request:', error);
       toast({

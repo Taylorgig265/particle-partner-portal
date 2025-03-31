@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, Mail } from "lucide-react";
-import { useAdminOrders, QuoteItem } from "@/services/product-service";
+import { useAdminOrders, QuoteItem, QuoteRequest } from "@/services/product-service";
 import { format } from "date-fns";
 
 const OrderStatusBadge = ({ status }: { status: string }) => {
@@ -121,7 +121,7 @@ const AdminOrders = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
+              orders.map((order: QuoteRequest) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-sm">
                     {order.id.slice(0, 8)}...

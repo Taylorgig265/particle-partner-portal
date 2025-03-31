@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
@@ -177,14 +176,15 @@ export const useQuoteRequest = () => {
       
       console.log("Product data retrieved:", productData);
       
-      // Generate anonymous user ID if there is no authenticated user
-      const anonymousId = crypto.randomUUID();
+      // For anonymous quote requests, we don't use an actual user ID
+      // Instead, we store all the contact details in the contact_details field
       
       // Create quote request (using orders table)
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: anonymousId,
+          // Using a UUID for anonymous users, but no foreign key constraint to profiles
+          user_id: crypto.randomUUID(),
           status: 'quote_requested',
           total_amount: productData.price * quantity,
           shipping_address: null,
@@ -220,11 +220,6 @@ export const useQuoteRequest = () => {
       }
       
       console.log("Quote request item created successfully");
-      
-      toast({
-        title: "Quote Request Submitted",
-        description: "We have received your quote request and will contact you soon.",
-      });
       
       return orderData[0];
     } catch (err: any) {
