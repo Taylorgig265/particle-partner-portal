@@ -1,25 +1,24 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
-  const heroRef = useRef<HTMLDivElement>(null);
-  
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!heroRef.current) return;
+      const heroElement = document.querySelector('.bg-particle-light') as HTMLElement;
+      if (!heroElement) return;
       
       const { clientX, clientY } = e;
-      const { left, top, width, height } = heroRef.current.getBoundingClientRect();
+      const { left, top, width, height } = heroElement.getBoundingClientRect();
       
       const x = (clientX - left) / width;
       const y = (clientY - top) / height;
       
-      heroRef.current.style.setProperty('--mouse-x', `${x}`);
-      heroRef.current.style.setProperty('--mouse-y', `${y}`);
+      heroElement.style.setProperty('--mouse-x', `${x}`);
+      heroElement.style.setProperty('--mouse-y', `${y}`);
     };
     
     window.addEventListener('mousemove', handleMouseMove);
@@ -31,7 +30,6 @@ const Hero = () => {
   
   return (
     <section 
-      ref={heroRef}
       className="relative h-screen flex items-center overflow-hidden bg-particle-light" 
       style={{
         backgroundImage: `radial-gradient(
