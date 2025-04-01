@@ -35,7 +35,11 @@ const Navbar = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex gap-2 md:gap-10">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="inline-block font-bold text-xl">MediSupply</span>
+            <img 
+              src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
+              alt="Particle Investment Logo" 
+              className="h-10 w-auto" 
+            />
           </Link>
 
           <nav className="hidden gap-6 md:flex">
@@ -88,7 +92,11 @@ const Navbar = () => {
                     className="flex items-center"
                     onClick={() => setOpen(false)}
                   >
-                    <span className="font-bold">MediSupply</span>
+                    <img 
+                      src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
+                      alt="Particle Investment Logo" 
+                      className="h-10 w-auto" 
+                    />
                   </Link>
                 </SheetTitle>
               </SheetHeader>

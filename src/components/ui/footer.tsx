@@ -12,9 +12,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Company Info */}
           <div className="space-y-4">
-            <h4 className="text-xl font-bold text-white mb-6">
-              Particle<span className="text-particle-accent">Investment</span>
-            </h4>
+            <div className="flex items-center space-x-3 mb-6">
+              <img 
+                src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
+                alt="Particle Investment Logo" 
+                className="h-16 w-auto bg-white rounded-full p-1"
+              />
+            </div>
             <p className="text-sm leading-relaxed opacity-80">
               A trusted supplier of diagnostic and medical equipment in Malawi with over a decade of experience 
               in providing high-quality products and exceptional service.
