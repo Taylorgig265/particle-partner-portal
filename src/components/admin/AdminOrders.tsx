@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, Mail } from "lucide-react";
-import { useAdminOrders, QuoteItem, QuoteRequest } from "@/services/product-service";
+import { useAdminOrders, QuoteItem, Order } from "@/services/product-service";
 import { format } from "date-fns";
 
 const OrderStatusBadge = ({ status }: { status: string }) => {
@@ -37,6 +37,9 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
     rejected: "bg-red-100 text-red-800",
     completed: "bg-teal-100 text-teal-800",
     pending: "bg-yellow-100 text-yellow-800",
+    processing: "bg-indigo-100 text-indigo-800",
+    shipped: "bg-orange-100 text-orange-800",
+    delivered: "bg-green-100 text-green-800"
   };
   
   const color = statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800";
@@ -67,8 +70,9 @@ const AdminOrders = () => {
     setOrderItemsLoading(true);
     
     try {
-      const items = await fetchOrderDetails(orderId);
-      setOrderItems(items);
+      const details = await fetchOrderDetails(orderId);
+      // Type assertion to fix TypeScript error
+      setOrderItems(details.items as QuoteItem[]);
     } catch (error) {
       console.error("Failed to load order details", error);
     } finally {
@@ -77,14 +81,24 @@ const AdminOrders = () => {
   };
   
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    await updateOrderStatus(orderId, newStatus);
+    // Type validation to ensure only valid statuses are passed
+    if (
+      newStatus === 'pending' || 
+      newStatus === 'processing' || 
+      newStatus === 'shipped' || 
+      newStatus === 'delivered'
+    ) {
+      await updateOrderStatus(orderId, newStatus);
+    } else {
+      console.error(`Invalid status: ${newStatus}`);
+    }
   };
   
   if (loading) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Quote Requests</h2>
+          <h2 className="text-xl font-bold">Orders</h2>
         </div>
         <div className="space-y-2">
           {Array(5).fill(0).map((_, index) => (
@@ -98,17 +112,17 @@ const AdminOrders = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Quote Requests ({orders.length})</h2>
+        <h2 className="text-xl font-bold">Orders ({orders.length})</h2>
       </div>
       
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Request ID</TableHead>
-              <TableHead>Contact Info</TableHead>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Estimated Value</TableHead>
+              <TableHead>Total Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -117,28 +131,28 @@ const AdminOrders = () => {
             {orders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-6 text-gray-500">
-                  No quote requests found.
+                  No orders found.
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order: QuoteRequest) => (
+              orders.map((order: Order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-sm">
                     {order.id.slice(0, 8)}...
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      {order.contact_details?.name || "Unknown"}
+                      {order.contact_details?.name || order.customer || "Unknown"}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {order.contact_details?.email}
+                      {order.contact_details?.email || "No email"}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(order.created_at), "MMM d, yyyy")}
+                    {format(new Date(order.created_at || order.date || new Date()), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell className="font-medium">
-                    ${Number(order.total_amount).toFixed(2)}
+                    ${Number(order.total_amount || order.total).toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <Select
@@ -151,11 +165,10 @@ const AdminOrders = () => {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="quote_requested">Quote Requested</SelectItem>
-                        <SelectItem value="quote_sent">Quote Sent</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -172,8 +185,9 @@ const AdminOrders = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => {
-                          if (order.contact_details?.email) {
-                            window.location.href = `mailto:${order.contact_details.email}?subject=Quote for Request #${order.id.slice(0, 8)}`;
+                          const email = order.contact_details?.email;
+                          if (email) {
+                            window.location.href = `mailto:${email}?subject=Order #${order.id.slice(0, 8)}`;
                           }
                         }}
                         disabled={!order.contact_details?.email}
@@ -189,13 +203,13 @@ const AdminOrders = () => {
         </Table>
       </div>
       
-      {/* Quote Request Details Sheet */}
+      {/* Order Details Sheet */}
       <Sheet open={!!activeOrder} onOpenChange={(open) => !open && setActiveOrder(null)}>
         <SheetContent className="sm:max-w-xl">
           <SheetHeader>
-            <SheetTitle>Quote Request Details</SheetTitle>
+            <SheetTitle>Order Details</SheetTitle>
             <SheetDescription>
-              {activeOrder && `Request ID: ${activeOrder}`}
+              {activeOrder && `Order ID: ${activeOrder}`}
             </SheetDescription>
           </SheetHeader>
           
@@ -209,10 +223,10 @@ const AdminOrders = () => {
             ) : (
               <>
                 <div className="space-y-2">
-                  <div className="font-semibold">Requested Items</div>
+                  <div className="font-semibold">Order Items</div>
                   {orderItems.length === 0 ? (
                     <div className="text-center py-6 text-gray-500">
-                      No items found for this request.
+                      No items found for this order.
                     </div>
                   ) : (
                     orderItems.map((item) => (
@@ -223,17 +237,21 @@ const AdminOrders = () => {
                               src={item.product.image_url} 
                               alt={item.product?.name} 
                               className="w-10 h-10 object-cover rounded" 
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/placeholder.svg';
+                              }}
                             />
                           )}
                           <div>
-                            <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
+                            <div className="font-medium">{item.product_name || "Unknown Product"}</div>
                             <div className="text-xs text-gray-500">
-                              Qty: {item.quantity} × ${Number(item.price_at_purchase).toFixed(2)}
+                              Qty: {item.quantity} × ${Number(item.price_at_purchase || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>
                         <div className="font-medium">
-                          ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)}
+                          ${((Number(item.price_at_purchase || 0)) * item.quantity).toFixed(2)}
                         </div>
                       </div>
                     ))
@@ -244,9 +262,9 @@ const AdminOrders = () => {
                 
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Estimated Value</span>
+                    <span className="text-gray-500">Total Amount</span>
                     <span className="font-medium">
-                      ${orderItems.reduce((sum, item) => sum + (Number(item.price_at_purchase) * item.quantity), 0).toFixed(2)}
+                      ${orderItems.reduce((sum, item) => sum + ((Number(item.price_at_purchase || 0)) * item.quantity), 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -260,15 +278,15 @@ const AdminOrders = () => {
                       <>
                         <div>
                           <span className="font-medium">Name: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.name}
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.name || "Unknown"}
                         </div>
                         <div>
                           <span className="font-medium">Email: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.email}
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.email || "No email"}
                         </div>
                         <div>
                           <span className="font-medium">Phone: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.phone}
+                          {orders.find(o => o.id === activeOrder)?.contact_details?.phone || "No phone"}
                         </div>
                         {orders.find(o => o.id === activeOrder)?.contact_details?.company && (
                           <div>

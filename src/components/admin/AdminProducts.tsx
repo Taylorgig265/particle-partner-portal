@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/use-toast";
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 const AdminProducts = () => {
   const { products, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
@@ -77,11 +76,28 @@ const AdminProducts = () => {
 
   const handleAddProduct = async () => {
     try {
-      await addProduct(formData);
+      const newProduct = await addProduct(formData);
+      if (newProduct) {
+        toast({
+          title: "Product added",
+          description: `${formData.name} has been added successfully.`
+        });
+      } else {
+        toast({
+          title: "Failed to add product",
+          description: "An error occurred while adding the product.",
+          variant: "destructive"
+        });
+      }
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error) {
       console.error("Failed to add product:", error);
+      toast({
+        title: "Failed to add product",
+        description: "An error occurred while adding the product.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -90,11 +106,11 @@ const AdminProducts = () => {
     setFormData({
       name: product.name,
       description: product.description,
-      fullDescription: product.fullDescription || "",
+      fullDescription: product.fullDescription || product.full_description || "",
       price: product.price,
       category: product.category,
-      image_url: product.image_url || "",
-      in_stock: product.in_stock
+      image_url: product.image_url || product.imageUrl || "",
+      in_stock: product.in_stock !== undefined ? product.in_stock : true
     });
     setIsEditDialogOpen(true);
   };
@@ -103,20 +119,65 @@ const AdminProducts = () => {
     if (!currentProduct) return;
     
     try {
-      await updateProduct(currentProduct.id, formData);
+      // Here's the fix for the TS error - pass only one argument with all the data
+      const success = await updateProduct({
+        ...currentProduct,
+        name: formData.name,
+        description: formData.description,
+        fullDescription: formData.fullDescription,
+        price: formData.price,
+        category: formData.category,
+        image_url: formData.image_url,
+        in_stock: formData.in_stock
+      });
+      
+      if (success) {
+        toast({
+          title: "Product updated",
+          description: `${formData.name} has been updated successfully.`
+        });
+      } else {
+        toast({
+          title: "Failed to update product",
+          description: "An error occurred while updating the product.",
+          variant: "destructive"
+        });
+      }
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error) {
       console.error("Failed to update product:", error);
+      toast({
+        title: "Failed to update product",
+        description: "An error occurred while updating the product.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProduct(id);
+        const success = await deleteProduct(id);
+        if (success) {
+          toast({
+            title: "Product deleted",
+            description: "The product has been deleted successfully."
+          });
+        } else {
+          toast({
+            title: "Failed to delete product",
+            description: "An error occurred while deleting the product.",
+            variant: "destructive"
+          });
+        }
       } catch (error) {
         console.error("Failed to delete product:", error);
+        toast({
+          title: "Failed to delete product",
+          description: "An error occurred while deleting the product.",
+          variant: "destructive"
+        });
       }
     }
   };
@@ -237,7 +298,7 @@ const AdminProducts = () => {
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
+                <TableCell>${parseFloat(product.price.toString()).toFixed(2)}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {product.in_stock ? 'In Stock' : 'Out of Stock'}

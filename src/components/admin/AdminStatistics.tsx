@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart, 
   PieChart, 
   Pie,
-  Sector, 
   Cell, 
   Bar, 
   XAxis, 
@@ -18,7 +16,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { useAdminProducts, useAdminOrders, useAdminCustomers } from "@/services/product-service";
-import { Package, ShoppingCart, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Package, ShoppingCart, Users, DollarSign } from "lucide-react";
 
 const AdminStatistics = () => {
   const { products } = useAdminProducts();
@@ -46,10 +44,11 @@ const AdminStatistics = () => {
   // Process order data
   useEffect(() => {
     if (orders && orders.length > 0) {
-      const totalSales = orders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+      const totalSales = orders.reduce((sum, order) => sum + Number(order.total_amount || order.total || 0), 0);
       const avgOrderValue = totalSales / orders.length;
       const pendingOrders = orders.filter(order => order.status === 'pending').length;
-      const completedOrders = orders.filter(order => order.status === 'completed').length;
+      // Fix for TS error - check for "delivered" instead of "completed"
+      const completedOrders = orders.filter(order => order.status === 'delivered').length;
       
       setOrderStats({
         totalSales,
@@ -87,7 +86,7 @@ const AdminStatistics = () => {
   
   // Process customer data
   useEffect(() => {
-    if (customers && customers.length > 0 && orders && orders.length > 0) {
+    if (customers && customers.length > 0) {
       const totalSpent = customers.reduce((sum, customer) => sum + (customer.total_spent || 0), 0);
       const avgSpendPerCustomer = customers.length > 0 ? totalSpent / customers.length : 0;
       
@@ -96,7 +95,7 @@ const AdminStatistics = () => {
         avgSpendPerCustomer
       });
     }
-  }, [customers, orders]);
+  }, [customers]);
   
   // Monthly sales data
   const monthlySalesData = () => {
@@ -105,10 +104,10 @@ const AdminStatistics = () => {
     const monthlyData: Record<string, number> = {};
     
     orders.forEach(order => {
-      const date = new Date(order.created_at);
+      const date = new Date(order.created_at || order.date || new Date());
       const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
       
-      monthlyData[monthYear] = (monthlyData[monthYear] || 0) + Number(order.total_amount);
+      monthlyData[monthYear] = (monthlyData[monthYear] || 0) + Number(order.total_amount || order.total || 0);
     });
     
     return Object.entries(monthlyData)
@@ -360,7 +359,7 @@ const AdminStatistics = () => {
               <CardHeader>
                 <CardTitle>Completed Orders</CardTitle>
                 <CardDescription>
-                  Successfully fulfilled orders
+                  Successfully delivered orders
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-center h-40">
