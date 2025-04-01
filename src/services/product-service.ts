@@ -1,3 +1,7 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
 export interface Product {
   id: string;
   name: string;
@@ -5,6 +9,9 @@ export interface Product {
   price: number;
   imageUrl: string;
   category: string;
+  in_stock?: boolean;
+  fullDescription?: string;
+  image_url?: string; // Adding for backward compatibility
 }
 
 export interface Order {
@@ -14,6 +21,46 @@ export interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered';
   total: number;
   items: number;
+  created_at?: string;
+  total_amount?: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  products: Product[];
+}
+
+export interface QuoteRequest {
+  id: string;
+  product_id: string;
+  quantity: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  company: string;
+  message: string;
+  created_at: string;
+  status: 'pending' | 'contacted' | 'quoted' | 'completed' | 'canceled';
+}
+
+export interface QuoteItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  price_quoted?: number;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  orders_count: number;
+  total_spent: number;
+  last_order_date: string;
 }
 
 const products: Product[] = [
@@ -106,7 +153,9 @@ const orders: Order[] = [
     date: '2024-07-01',
     status: 'delivered',
     total: 12000,
-    items: 5
+    items: 5,
+    created_at: '2024-07-01',
+    total_amount: 12000
   },
   {
     id: '102',
@@ -114,7 +163,9 @@ const orders: Order[] = [
     date: '2024-07-05',
     status: 'shipped',
     total: 5500,
-    items: 3
+    items: 3,
+    created_at: '2024-07-05',
+    total_amount: 5500
   },
   {
     id: '103',
@@ -122,7 +173,9 @@ const orders: Order[] = [
     date: '2024-07-10',
     status: 'processing',
     total: 25000,
-    items: 10
+    items: 10,
+    created_at: '2024-07-10',
+    total_amount: 25000
   },
   {
     id: '104',
@@ -130,7 +183,9 @@ const orders: Order[] = [
     date: '2024-07-15',
     status: 'pending',
     total: 75000,
-    items: 25
+    items: 25,
+    created_at: '2024-07-15',
+    total_amount: 75000
   },
   {
     id: '105',
@@ -138,7 +193,9 @@ const orders: Order[] = [
     date: '2024-07-20',
     status: 'delivered',
     total: 15000,
-    items: 7
+    items: 7,
+    created_at: '2024-07-20',
+    total_amount: 15000
   },
   {
     id: '106',
@@ -146,7 +203,9 @@ const orders: Order[] = [
     date: '2024-07-25',
     status: 'shipped',
     total: 9000,
-    items: 4
+    items: 4,
+    created_at: '2024-07-25',
+    total_amount: 9000
   },
   {
     id: '107',
@@ -154,7 +213,9 @@ const orders: Order[] = [
     date: '2024-07-30',
     status: 'processing',
     total: 30000,
-    items: 12
+    items: 12,
+    created_at: '2024-07-30',
+    total_amount: 30000
   },
   {
     id: '108',
@@ -162,7 +223,9 @@ const orders: Order[] = [
     date: '2024-08-05',
     status: 'pending',
     total: 60000,
-    items: 20
+    items: 20,
+    created_at: '2024-08-05',
+    total_amount: 60000
   },
   {
     id: '109',
@@ -170,7 +233,9 @@ const orders: Order[] = [
     date: '2024-08-10',
     status: 'delivered',
     total: 18000,
-    items: 8
+    items: 8,
+    created_at: '2024-08-10',
+    total_amount: 18000
   },
   {
     id: '110',
@@ -178,16 +243,95 @@ const orders: Order[] = [
     date: '2024-08-15',
     status: 'shipped',
     total: 11000,
-    items: 6
+    items: 6,
+    created_at: '2024-08-15',
+    total_amount: 11000
+  }
+];
+
+// Simulated customers data
+const customers: Customer[] = [
+  {
+    id: 'c101',
+    name: 'Koche Community Hospital',
+    email: 'contact@kochehospital.org',
+    phone: '+265 1234 5678',
+    company: 'Koche Community Hospital',
+    orders_count: 5,
+    total_spent: 28000,
+    last_order_date: '2024-07-01'
+  },
+  {
+    id: 'c102',
+    name: 'Partners In Hope',
+    email: 'orders@partnersinhope.org',
+    phone: '+265 9876 5432',
+    company: 'Partners In Hope',
+    orders_count: 3,
+    total_spent: 15500,
+    last_order_date: '2024-07-05'
+  },
+  {
+    id: 'c103',
+    name: 'ABC Clinic',
+    email: 'procurement@abcclinic.com',
+    phone: '+265 5555 7777',
+    company: 'ABC Clinic',
+    orders_count: 10,
+    total_spent: 45000,
+    last_order_date: '2024-07-10'
+  }
+];
+
+// Simulated quote requests
+const quoteRequests: QuoteRequest[] = [
+  {
+    id: 'q101',
+    product_id: '1',
+    quantity: 2,
+    customer_name: 'John Doe',
+    customer_email: 'john@example.com',
+    customer_phone: '+265 999 888 777',
+    company: 'City Medical Center',
+    message: 'Looking for bulk pricing on ECG machines.',
+    created_at: '2024-07-01',
+    status: 'quoted'
+  },
+  {
+    id: 'q102',
+    product_id: '3',
+    quantity: 5,
+    customer_name: 'Jane Smith',
+    customer_email: 'jane@example.com',
+    customer_phone: '+265 111 222 333',
+    company: 'Smith Clinic',
+    message: 'Need patient monitors for our new wing.',
+    created_at: '2024-07-15',
+    status: 'pending'
   }
 ];
 
 export const getProducts = async (): Promise<Product[]> => {
-  return products;
+  // For backward compatibility, ensure each product has image_url property
+  return products.map(product => ({
+    ...product,
+    image_url: product.imageUrl,
+    in_stock: true,
+    fullDescription: product.description
+  }));
 };
 
 export const getProductById = async (id: string): Promise<Product | undefined> => {
-  return products.find((product) => product.id === id);
+  const product = products.find((product) => product.id === id);
+  if (product) {
+    return {
+      ...product,
+      image_url: product.imageUrl,
+      in_stock: true,
+      fullDescription: product.description
+    };
+  }
+  return undefined;
 };
 
 export const getOrders = async (): Promise<Order[]> => {
@@ -196,4 +340,204 @@ export const getOrders = async (): Promise<Order[]> => {
 
 export const getOrderById = async (id: string): Promise<Order | undefined> => {
   return orders.find((order) => order.id === id);
+};
+
+// Hook for product categories for product display
+export const useProducts = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const products = await getProducts();
+        
+        // Group products by category
+        const categoryMap = products.reduce((acc, product) => {
+          const categoryName = product.category || 'Uncategorized';
+          
+          if (!acc[categoryName]) {
+            acc[categoryName] = {
+              id: categoryName.toLowerCase().replace(/\s+/g, '-'),
+              name: categoryName,
+              description: `High-quality ${categoryName} equipment for medical facilities.`,
+              products: []
+            };
+          }
+          
+          acc[categoryName].products.push(product);
+          return acc;
+        }, {} as Record<string, Category>);
+        
+        setCategories(Object.values(categoryMap));
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProducts();
+  }, []);
+
+  return { categories, loading, error };
+};
+
+// Hook for quote requests
+export const useQuoteRequest = () => {
+  const submitQuoteRequest = async (
+    productId: string, 
+    quantity: number,
+    customerInfo: {
+      name: string;
+      email: string;
+      phone: string;
+      company: string;
+      message: string;
+    }
+  ) => {
+    // In a real app, this would submit to Supabase or another backend
+    console.log('Submitting quote request for:', { productId, quantity, customerInfo });
+    
+    // Simulate API call
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        console.log('Quote request submitted successfully');
+        resolve();
+      }, 1000);
+    });
+  };
+
+  return { submitQuoteRequest };
+};
+
+// Admin hooks
+export const useAdminProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await getProducts();
+        setProducts(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProducts();
+  }, []);
+
+  const updateProduct = async (product: Product) => {
+    console.log('Updating product:', product);
+    return true;
+  };
+
+  const deleteProduct = async (id: string) => {
+    console.log('Deleting product:', id);
+    return true;
+  };
+
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    console.log('Adding product:', product);
+    return {
+      ...product,
+      id: `new-${Date.now()}`,
+    };
+  };
+
+  return {
+    products,
+    loading,
+    error,
+    updateProduct,
+    deleteProduct,
+    addProduct
+  };
+};
+
+export const useAdminOrders = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>(quoteRequests);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await getOrders();
+        setOrders(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setError('Failed to load orders. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchOrders();
+  }, []);
+
+  const updateOrderStatus = async (id: string, status: Order['status']) => {
+    console.log('Updating order status:', { id, status });
+    return true;
+  };
+
+  const updateQuoteStatus = async (id: string, status: QuoteRequest['status']) => {
+    console.log('Updating quote request status:', { id, status });
+    return true;
+  };
+
+  return {
+    orders,
+    quoteRequests,
+    loading,
+    error,
+    updateOrderStatus,
+    updateQuoteStatus
+  };
+};
+
+export const useAdminCustomers = () => {
+  const [customers, setCustomers] = useState<Customer[]>(customers);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        // In a real app, this would be a call to Supabase or another backend
+        // For now, we're using the mock data
+        setCustomers(customers);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching customers:', err);
+        setError('Failed to load customers. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCustomers();
+  }, []);
+
+  return {
+    customers,
+    loading,
+    error
+  };
 };
