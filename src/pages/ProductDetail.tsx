@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
-import { Product } from '@/services/product-service';
+import { Product, getProductById } from '@/services/product-service';
 import QuoteRequestForm from '@/components/QuoteRequestForm';
 import {
   Dialog,
@@ -38,21 +37,12 @@ const ProductDetail = () => {
           throw new Error("Product ID is missing");
         }
         
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .single();
+        // Use the local getProductById function instead of direct Supabase query
+        // This handles the numeric IDs from our mock data
+        const productData = await getProductById(id);
         
-        if (error) throw new Error(error.message);
-        
-        if (data) {
-          // Map the database fields to the Product interface
-          const mappedProduct: Product = {
-            ...data,
-            fullDescription: data.full_description || ''
-          };
-          setProduct(mappedProduct);
+        if (productData) {
+          setProduct(productData);
         } else {
           throw new Error("Product not found");
         }
@@ -138,8 +128,8 @@ const ProductDetail = () => {
               >
                 <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100 h-full">
                   <img 
-                    src={product.image_url || 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
-                    alt={product.name} 
+                    src={product?.image_url || product?.imageUrl || 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
+                    alt={product?.name} 
                     className="w-full h-[400px] object-cover object-center"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -159,10 +149,10 @@ const ProductDetail = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2 py-1 bg-particle-navy/10 text-particle-navy text-xs rounded-full font-medium">
-                      {product.category || "Uncategorized"}
+                      {product?.category || "Uncategorized"}
                     </span>
                     
-                    {product.in_stock ? (
+                    {product?.in_stock ? (
                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
                         Available
                       </span>
@@ -173,11 +163,11 @@ const ProductDetail = () => {
                     )}
                   </div>
                   
-                  <h1 className="text-3xl md:text-4xl font-bold text-particle-navy mb-4">{product.name}</h1>
-                  <p className="text-gray-600 mb-6">{product.description}</p>
+                  <h1 className="text-3xl md:text-4xl font-bold text-particle-navy mb-4">{product?.name}</h1>
+                  <p className="text-gray-600 mb-6">{product?.description}</p>
                   
                   <div className="text-3xl font-bold text-particle-accent mb-8">
-                    ${parseFloat(product.price.toString()).toFixed(2)}
+                    ${product?.price ? parseFloat(product.price.toString()).toFixed(2) : '0.00'}
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -192,14 +182,16 @@ const ProductDetail = () => {
                         <DialogHeader>
                           <DialogTitle>Request a Quote</DialogTitle>
                           <DialogDescription>
-                            Fill out the form below and we'll contact you with pricing and availability for {product.name}.
+                            Fill out the form below and we'll contact you with pricing and availability for {product?.name}.
                           </DialogDescription>
                         </DialogHeader>
-                        <QuoteRequestForm 
-                          productId={product.id} 
-                          productName={product.name} 
-                          onSuccess={() => setIsQuoteDialogOpen(false)} 
-                        />
+                        {product && (
+                          <QuoteRequestForm 
+                            productId={product.id} 
+                            productName={product.name} 
+                            onSuccess={() => setIsQuoteDialogOpen(false)} 
+                          />
+                        )}
                       </DialogContent>
                     </Dialog>
                   </div>
@@ -249,13 +241,13 @@ const ProductDetail = () => {
               <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
                 <h2 className="text-2xl font-bold text-particle-navy mb-6">Product Details</h2>
                 
-                {product.fullDescription ? (
+                {product?.fullDescription || product?.full_description ? (
                   <div 
                     className="prose max-w-none text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: product.fullDescription }}
+                    dangerouslySetInnerHTML={{ __html: product.fullDescription || product.full_description || '' }}
                   />
                 ) : (
-                  <p className="text-gray-600">{product.description}</p>
+                  <p className="text-gray-600">{product?.description}</p>
                 )}
               </div>
             </motion.div>

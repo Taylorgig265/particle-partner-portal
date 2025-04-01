@@ -7,11 +7,14 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string; // Optional since we also handle image_url
   category: string;
   in_stock?: boolean;
   fullDescription?: string;
-  image_url?: string; // Adding for backward compatibility
+  image_url?: string;
+  full_description?: string;
+  updated_at?: string;
+  created_at?: string;
 }
 
 export interface Order {
@@ -23,6 +26,10 @@ export interface Order {
   items: number;
   created_at?: string;
   total_amount?: number;
+  contact_details?: any;
+  shipping_address?: any;
+  user_id?: string;
+  updated_at?: string;
 }
 
 export interface Category {
@@ -43,6 +50,8 @@ export interface QuoteRequest {
   message: string;
   created_at: string;
   status: 'pending' | 'contacted' | 'quoted' | 'completed' | 'canceled';
+  contact_details?: any;
+  total_amount?: number;
 }
 
 export interface QuoteItem {
@@ -50,6 +59,8 @@ export interface QuoteItem {
   product_name: string;
   quantity: number;
   price_quoted?: number;
+  product?: any;
+  price_at_purchase?: number;
 }
 
 export interface Customer {
@@ -61,8 +72,11 @@ export interface Customer {
   orders_count: number;
   total_spent: number;
   last_order_date: string;
+  created_at?: string;
+  avatar_url?: string;
 }
 
+// Mock data for products
 const products: Product[] = [
   {
     id: '1',
@@ -250,7 +264,7 @@ const orders: Order[] = [
 ];
 
 // Simulated customers data
-const customers: Customer[] = [
+const customersData: Customer[] = [
   {
     id: 'c101',
     name: 'Koche Community Hospital',
@@ -259,7 +273,9 @@ const customers: Customer[] = [
     company: 'Koche Community Hospital',
     orders_count: 5,
     total_spent: 28000,
-    last_order_date: '2024-07-01'
+    last_order_date: '2024-07-01',
+    created_at: '2023-01-15',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=koche'
   },
   {
     id: 'c102',
@@ -269,7 +285,9 @@ const customers: Customer[] = [
     company: 'Partners In Hope',
     orders_count: 3,
     total_spent: 15500,
-    last_order_date: '2024-07-05'
+    last_order_date: '2024-07-05',
+    created_at: '2023-02-20',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=partners'
   },
   {
     id: 'c103',
@@ -279,12 +297,14 @@ const customers: Customer[] = [
     company: 'ABC Clinic',
     orders_count: 10,
     total_spent: 45000,
-    last_order_date: '2024-07-10'
+    last_order_date: '2024-07-10',
+    created_at: '2023-03-05',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=abc'
   }
 ];
 
 // Simulated quote requests
-const quoteRequests: QuoteRequest[] = [
+const quoteRequestsData: QuoteRequest[] = [
   {
     id: 'q101',
     product_id: '1',
@@ -295,7 +315,13 @@ const quoteRequests: QuoteRequest[] = [
     company: 'City Medical Center',
     message: 'Looking for bulk pricing on ECG machines.',
     created_at: '2024-07-01',
-    status: 'quoted'
+    status: 'quoted',
+    contact_details: {
+      name: 'John Doe',
+      email: 'john@example.com',
+      phone: '+265 999 888 777',
+    },
+    total_amount: 2400
   },
   {
     id: 'q102',
@@ -307,7 +333,13 @@ const quoteRequests: QuoteRequest[] = [
     company: 'Smith Clinic',
     message: 'Need patient monitors for our new wing.',
     created_at: '2024-07-15',
-    status: 'pending'
+    status: 'pending',
+    contact_details: {
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      phone: '+265 111 222 333',
+    },
+    total_amount: 12500
   }
 ];
 
@@ -469,7 +501,7 @@ export const useAdminProducts = () => {
 
 export const useAdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>(quoteRequests);
+  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>(quoteRequestsData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -500,6 +532,15 @@ export const useAdminOrders = () => {
     console.log('Updating quote request status:', { id, status });
     return true;
   };
+  
+  const fetchOrderDetails = async (id: string) => {
+    console.log('Fetching order details:', id);
+    const order = orders.find(o => o.id === id);
+    return {
+      order,
+      items: [],
+    };
+  };
 
   return {
     orders,
@@ -507,12 +548,13 @@ export const useAdminOrders = () => {
     loading,
     error,
     updateOrderStatus,
-    updateQuoteStatus
+    updateQuoteStatus,
+    fetchOrderDetails
   };
 };
 
 export const useAdminCustomers = () => {
-  const [customers, setCustomers] = useState<Customer[]>(customers);
+  const [customers, setCustomers] = useState<Customer[]>(customersData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -522,7 +564,7 @@ export const useAdminCustomers = () => {
         setLoading(true);
         // In a real app, this would be a call to Supabase or another backend
         // For now, we're using the mock data
-        setCustomers(customers);
+        setCustomers(customersData);
         setError(null);
       } catch (err) {
         console.error('Error fetching customers:', err);
@@ -534,10 +576,16 @@ export const useAdminCustomers = () => {
     
     fetchCustomers();
   }, []);
+  
+  const fetchCustomerOrders = async (customerId: string) => {
+    console.log('Fetching orders for customer:', customerId);
+    return orders.filter(order => order.customer && order.customer.includes(customers.find(c => c.id === customerId)?.name || ''));
+  };
 
   return {
     customers,
     loading,
-    error
+    error,
+    fetchCustomerOrders
   };
 };
