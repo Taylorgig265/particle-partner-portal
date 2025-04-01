@@ -1,12 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, 
   ShoppingCart, 
   Users,
   Home,
-  BarChart
+  BarChart,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,9 +16,25 @@ import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminStatistics from "@/components/admin/AdminStatistics";
 import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("products");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { toast } = useToast();
+  
+  // Refresh content when tab changes
+  useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, [activeTab]);
+  
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    toast({
+      title: "Refreshed",
+      description: "Data has been refreshed from the database.",
+    });
+  };
   
   return (
     <motion.div
@@ -32,12 +49,18 @@ const Admin = () => {
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="text-gray-600">Manage products, orders, and customers</p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/">
-              <Home className="mr-2" size={16} />
-              Back to Site
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="mr-2">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Data
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/">
+                <Home className="mr-2" size={16} />
+                Back to Site
+              </Link>
+            </Button>
+          </div>
         </header>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -61,19 +84,19 @@ const Admin = () => {
           </TabsList>
           
           <TabsContent value="products" className="bg-white p-6 rounded-lg shadow">
-            <AdminProducts />
+            <AdminProducts key={`products-${refreshKey}`} />
           </TabsContent>
           
           <TabsContent value="orders" className="bg-white p-6 rounded-lg shadow">
-            <AdminOrders />
+            <AdminOrders key={`orders-${refreshKey}`} />
           </TabsContent>
           
           <TabsContent value="customers" className="bg-white p-6 rounded-lg shadow">
-            <AdminCustomers />
+            <AdminCustomers key={`customers-${refreshKey}`} />
           </TabsContent>
           
           <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
-            <AdminStatistics />
+            <AdminStatistics key={`statistics-${refreshKey}`} />
           </TabsContent>
         </Tabs>
       </div>

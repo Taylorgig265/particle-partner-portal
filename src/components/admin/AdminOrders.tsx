@@ -25,9 +25,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Mail } from "lucide-react";
-import { useAdminOrders, QuoteItem, Order } from "@/services/product-service";
+import { Eye, Mail, RefreshCw } from "lucide-react";
+import { useAdminOrders, QuoteItem, Order, OrderStatus } from "@/services/product-service";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 const OrderStatusBadge = ({ status }: { status: string }) => {
   const statusColors = {
@@ -64,6 +65,8 @@ const AdminOrders = () => {
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<QuoteItem[]>([]);
   const [orderItemsLoading, setOrderItemsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
   
   const handleViewOrder = async (orderId: string) => {
     setActiveOrder(orderId);
@@ -71,27 +74,38 @@ const AdminOrders = () => {
     
     try {
       const details = await fetchOrderDetails(orderId);
-      // Type assertion to fix TypeScript error
       setOrderItems(details.items as QuoteItem[]);
     } catch (error) {
       console.error("Failed to load order details", error);
+      toast({
+        title: "Error",
+        description: "Failed to load order details. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setOrderItemsLoading(false);
     }
   };
   
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    // Type validation to ensure only valid statuses are passed
-    if (
-      newStatus === 'pending' || 
-      newStatus === 'processing' || 
-      newStatus === 'shipped' || 
-      newStatus === 'delivered'
-    ) {
-      await updateOrderStatus(orderId, newStatus);
-    } else {
-      console.error(`Invalid status: ${newStatus}`);
+    try {
+      await updateOrderStatus(orderId, newStatus as OrderStatus);
+      toast({
+        title: "Status Updated",
+        description: "Order status has been updated successfully.",
+      });
+    } catch (error) {
+      console.error(`Error updating status: ${error}`);
+      toast({
+        title: "Update Failed",
+        description: `Invalid status: ${newStatus}`,
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleRefresh = async () => {
+    window.location.reload();
   };
   
   if (loading) {
@@ -99,6 +113,10 @@ const AdminOrders = () => {
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Orders</h2>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
         <div className="space-y-2">
           {Array(5).fill(0).map((_, index) => (
@@ -113,6 +131,15 @@ const AdminOrders = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Orders ({orders.length})</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
       
       <div className="rounded-md border">
@@ -169,6 +196,10 @@ const AdminOrders = () => {
                         <SelectItem value="processing">Processing</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>
                         <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="quote_requested">Quote Requested</SelectItem>
+                        <SelectItem value="quote_sent">Quote Sent</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

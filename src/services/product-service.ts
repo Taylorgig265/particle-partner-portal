@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Product {
   id: string;
@@ -16,17 +18,20 @@ export interface Product {
   created_at?: string;
 }
 
+// Update the status type to match what's coming from the database
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
+
 export interface Order {
   id: string;
   customer?: string;
   date?: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  status: OrderStatus;
   total?: number;
   items?: number;
   created_at?: string;
   total_amount?: number;
-  contact_details?: any;
-  shipping_address?: any;
+  contact_details?: Record<string, any>; // Using Record instead of Json type for better type safety
+  shipping_address?: Record<string, any>;
   user_id?: string;
   updated_at?: string;
 }
@@ -416,6 +421,7 @@ export const getProductById = async (id: string): Promise<Product | undefined> =
 
 export const getOrders = async (): Promise<Order[]> => {
   try {
+    console.log('Fetching orders from Supabase...');
     const { data, error } = await supabase
       .from('orders')
       .select('*')
@@ -426,12 +432,25 @@ export const getOrders = async (): Promise<Order[]> => {
       return orders; // Fall back to mock data
     }
     
-    return data.map((order: any) => ({
-      ...order,
-      customer: order.contact_details?.name || "Unknown",
-      date: order.created_at,
-      total: order.total_amount
-    }));
+    if (!data || data.length === 0) {
+      console.log('No orders found in Supabase, using mock data');
+      return orders;
+    }
+    
+    console.log('Orders fetched from Supabase:', data.length);
+    
+    return data.map((order: any) => {
+      const contactDetails = order.contact_details as Record<string, any> | null;
+      const orderStatus = order.status as OrderStatus;
+      
+      return {
+        ...order,
+        status: orderStatus,
+        customer: contactDetails?.name || "Unknown",
+        date: order.created_at,
+        total: order.total_amount
+      };
+    });
   } catch (err) {
     console.error('Unexpected error fetching orders:', err);
     return orders; // Fall back to mock data
@@ -452,9 +471,14 @@ export const getOrderById = async (id: string): Promise<Order | undefined> => {
       return orders.find((order) => order.id === id);
     }
     
+    // Ensure that status is cast to OrderStatus
+    const orderStatus = data.status as OrderStatus;
+    const contactDetails = data.contact_details as Record<string, any> | null;
+    
     return {
       ...data,
-      customer: data.contact_details?.name || "Unknown",
+      status: orderStatus,
+      customer: contactDetails?.name || "Unknown",
       date: data.created_at,
       total: data.total_amount
     };
@@ -705,7 +729,9 @@ export const useAdminOrders = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+        console.log('Admin: Fetching orders from Supabase...');
         const data = await getOrders();
+        console.log('Admin: Orders fetched:', data.length);
         setOrders(data);
         setError(null);
       } catch (err) {
@@ -719,8 +745,9 @@ export const useAdminOrders = () => {
     fetchOrders();
   }, []);
 
-  const updateOrderStatus = async (id: string, status: Order['status']) => {
+  const updateOrderStatus = async (id: string, status: OrderStatus) => {
     try {
+      console.log(`Updating order ${id} status to ${status}`);
       const { error } = await supabase
         .from('orders')
         .update({ status })
@@ -735,6 +762,7 @@ export const useAdminOrders = () => {
       setOrders(prevOrders => 
         prevOrders.map(order => order.id === id ? { ...order, status } : order)
       );
+      console.log('Order status updated successfully');
       return true;
     } catch (err) {
       console.error('Unexpected error updating order status:', err);
@@ -744,6 +772,7 @@ export const useAdminOrders = () => {
   
   const fetchOrderDetails = async (id: string) => {
     try {
+      console.log(`Fetching details for order ${id}`);
       // Get the order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -759,20 +788,43 @@ export const useAdminOrders = () => {
         };
       }
 
-      // For the demo, we're not implementing order items yet
-      // In a real implementation, you would fetch the order items from the order_items table
-      return {
-        order,
-        items: [{
+      console.log('Order details fetched:', order);
+      const contactDetails = order.contact_details as Record<string, any> | null;
+      
+      // For the demo, generate order items based on contact_details
+      const items: QuoteItem[] = [];
+      
+      if (contactDetails && contactDetails.product_id && contactDetails.quantity) {
+        // Try to get the product details
+        const product = await getProductById(contactDetails.product_id);
+        
+        items.push({
           id: '1',
-          product_name: 'Product from contact details',
-          quantity: order.contact_details?.quantity || 1,
-          price_at_purchase: order.total_amount / (order.contact_details?.quantity || 1),
+          product_name: product?.name || 'Product from contact details',
+          quantity: contactDetails.quantity,
+          price_at_purchase: product?.price || (order.total_amount / contactDetails.quantity),
           product: {
-            name: 'Product from contact details',
+            name: product?.name || 'Product from contact details',
+            image_url: product?.image_url || '/placeholder.svg'
+          }
+        });
+      } else {
+        // Fallback item if no details found
+        items.push({
+          id: '1',
+          product_name: 'Unknown product',
+          quantity: 1,
+          price_at_purchase: order.total_amount,
+          product: {
+            name: 'Unknown product',
             image_url: '/placeholder.svg'
           }
-        }]
+        });
+      }
+
+      return {
+        order,
+        items
       };
     } catch (err) {
       console.error('Unexpected error fetching order details:', err);
