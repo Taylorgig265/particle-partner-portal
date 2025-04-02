@@ -295,7 +295,6 @@ export const useQuoteRequest = () => {
         .insert([{
           status: 'quote_requested',
           total_amount: estimatedTotal,
-          user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user
           contact_details: {
             name: customerInfo.name,
             email: customerInfo.email,
