@@ -31,8 +31,8 @@ const Admin = () => {
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     toast({
-      title: "Refreshed",
-      description: "Data has been refreshed from the database.",
+      title: "Refreshing Data",
+      description: "Fetching latest data from the database...",
     });
   };
   
