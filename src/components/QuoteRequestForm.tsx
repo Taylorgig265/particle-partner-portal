@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,7 +53,7 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      console.log("Form submitted with values:", values);
+      console.log("Submitting form with values:", values);
       await submitQuoteRequest(
         productId,
         values.quantity,
@@ -77,11 +76,11 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
       }
       
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting quote request:', error);
       toast({
         title: "Error",
-        description: "There was a problem submitting your quote request. Please try again.",
+        description: error.message || "There was a problem submitting your quote request. Please try again.",
         variant: "destructive"
       });
     } finally {

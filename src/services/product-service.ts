@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
@@ -18,10 +17,8 @@ export interface Product {
   created_at?: string;
 }
 
-// Update the status type to match what's coming from the database
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
 
-// Define a type for contact_details to ensure type safety
 export interface ContactDetails {
   name?: string;
   email?: string;
@@ -158,12 +155,12 @@ export const getOrders = async (): Promise<Order[]> => {
     
     if (error) {
       console.error('Error fetching orders from Supabase:', error);
-      return []; // Return empty array instead of mock data
+      return []; 
     }
     
     if (!data || data.length === 0) {
       console.log('No orders found in Supabase');
-      return []; // Return empty array instead of mock data
+      return []; 
     }
     
     console.log('Orders fetched from Supabase:', data.length);
@@ -182,7 +179,7 @@ export const getOrders = async (): Promise<Order[]> => {
     });
   } catch (err) {
     console.error('Unexpected error fetching orders:', err);
-    return []; // Return empty array instead of mock data
+    return []; 
   }
 };
 
@@ -282,13 +279,10 @@ export const useQuoteRequest = () => {
     }
   ) => {
     try {
-      console.log('Form submitted with values:', {
-        name: customerInfo.name,
-        email: customerInfo.email,
-        phone: customerInfo.phone,
-        company: customerInfo.company,
+      console.log('Submitting quote request with values:', {
+        productId,
         quantity,
-        message: customerInfo.message
+        customerInfo
       });
       
       // Get the product to calculate estimated total
@@ -299,7 +293,7 @@ export const useQuoteRequest = () => {
       const { data, error } = await supabase
         .from('orders')
         .insert([{
-          status: 'pending',
+          status: 'quote_requested',
           total_amount: estimatedTotal,
           user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user
           contact_details: {
@@ -316,14 +310,14 @@ export const useQuoteRequest = () => {
 
       if (error) {
         console.error('Error submitting quote request to Supabase:', error);
-        throw new Error('Failed to submit quote request');
+        throw new Error(`Failed to submit quote request: ${error.message}`);
       }
       
       console.log('Quote request submitted successfully:', data);
       return data;
     } catch (err) {
       console.error('Unexpected error submitting quote request:', err);
-      return null;
+      throw err; // Rethrow to handle in the component
     }
   };
 
@@ -459,24 +453,24 @@ export const useAdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      console.log('Admin: Fetching orders from Supabase...');
+      const data = await getOrders();
+      console.log('Admin: Orders fetched:', data.length);
+      setOrders(data);
+      setError(data.length === 0 ? 'No orders found in the database.' : null);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Failed to load orders. Please try again.');
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        console.log('Admin: Fetching orders from Supabase...');
-        const data = await getOrders();
-        console.log('Admin: Orders fetched:', data.length);
-        setOrders(data);
-        setError(data.length === 0 ? 'No orders found in the database.' : null);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to load orders. Please try again.');
-        setOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchOrders();
   }, []);
 
@@ -580,7 +574,8 @@ export const useAdminOrders = () => {
     loading,
     error,
     updateOrderStatus,
-    fetchOrderDetails
+    fetchOrderDetails,
+    fetchOrders // Export the fetchOrders function
   };
 };
 

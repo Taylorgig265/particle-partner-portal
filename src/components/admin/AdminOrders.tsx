@@ -61,7 +61,7 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
 };
 
 const AdminOrders = () => {
-  const { orders, loading, fetchOrderDetails, updateOrderStatus } = useAdminOrders();
+  const { orders, loading, fetchOrderDetails, updateOrderStatus, fetchOrders } = useAdminOrders();
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<QuoteItem[]>([]);
   const [orderItemsLoading, setOrderItemsLoading] = useState(false);
@@ -105,7 +105,23 @@ const AdminOrders = () => {
   };
 
   const handleRefresh = async () => {
-    window.location.reload();
+    setRefreshing(true);
+    try {
+      await fetchOrders();
+      toast({
+        title: "Data Refreshed",
+        description: "Orders have been refreshed from the database.",
+      });
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Could not refresh orders. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
   
   // Helper function to safely extract contact details properties

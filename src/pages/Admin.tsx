@@ -20,7 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("orders");  // Default to orders tab
   const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
   
