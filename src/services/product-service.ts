@@ -21,6 +21,17 @@ export interface Product {
 // Update the status type to match what's coming from the database
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
 
+// Define a type for contact_details to ensure type safety
+export interface ContactDetails {
+  name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  product_id?: string;
+  quantity?: number;
+}
+
 export interface Order {
   id: string;
   customer?: string;
@@ -30,8 +41,8 @@ export interface Order {
   items?: number;
   created_at?: string;
   total_amount?: number;
-  contact_details?: Json | null; // Changed from Record to Json type to match Supabase
-  shipping_address?: Json | null; // Changed from Record to Json type to match Supabase
+  contact_details?: Json | null;
+  shipping_address?: Json | null;
   user_id?: string;
   updated_at?: string;
 }
@@ -79,6 +90,17 @@ export interface Customer {
   created_at?: string;
   avatar_url?: string;
 }
+
+// Helper function to safely extract values from Json type
+export const getJsonValue = (json: Json | null, key: string): any => {
+  if (!json) return null;
+  
+  if (typeof json === 'object' && json !== null && key in json) {
+    return (json as Record<string, any>)[key];
+  }
+  
+  return null;
+};
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
@@ -153,7 +175,7 @@ export const getOrders = async (): Promise<Order[]> => {
       return {
         ...order,
         status: orderStatus,
-        customer: contactDetails?.name || "Unknown",
+        customer: contactDetails && typeof contactDetails === 'object' ? getJsonValue(contactDetails, 'name') || "Unknown" : "Unknown",
         date: order.created_at,
         total: order.total_amount
       };
@@ -184,7 +206,7 @@ export const getOrderById = async (id: string): Promise<Order | undefined> => {
     return {
       ...data,
       status: orderStatus,
-      customer: contactDetails?.name || "Unknown",
+      customer: contactDetails && typeof contactDetails === 'object' ? getJsonValue(contactDetails, 'name') || "Unknown" : "Unknown",
       date: data.created_at,
       total: data.total_amount
     };
@@ -507,20 +529,25 @@ export const useAdminOrders = () => {
       // For the demo, generate order items based on contact_details
       const items: QuoteItem[] = [];
       
-      if (contactDetails && contactDetails.product_id && contactDetails.quantity) {
-        // Try to get the product details
-        const product = await getProductById(contactDetails.product_id);
+      if (contactDetails && typeof contactDetails === 'object') {
+        const productId = getJsonValue(contactDetails, 'product_id');
+        const quantity = getJsonValue(contactDetails, 'quantity');
         
-        items.push({
-          id: '1',
-          product_name: product?.name || 'Product from contact details',
-          quantity: contactDetails.quantity,
-          price_at_purchase: product?.price || (order.total_amount / contactDetails.quantity),
-          product: {
-            name: product?.name || 'Product from contact details',
-            image_url: product?.image_url || '/placeholder.svg'
-          }
-        });
+        if (productId && quantity) {
+          // Try to get the product details
+          const product = await getProductById(productId);
+          
+          items.push({
+            id: '1',
+            product_name: product?.name || 'Product from contact details',
+            quantity: Number(quantity),
+            price_at_purchase: product?.price || (order.total_amount / Number(quantity)),
+            product: {
+              name: product?.name || 'Product from contact details',
+              image_url: product?.image_url || '/placeholder.svg'
+            }
+          });
+        }
       } else {
         // Fallback item if no details found
         items.push({

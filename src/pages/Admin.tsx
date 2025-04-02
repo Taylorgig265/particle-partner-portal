@@ -17,6 +17,7 @@ import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminStatistics from "@/components/admin/AdminStatistics";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("products");
@@ -28,7 +29,10 @@ const Admin = () => {
     setRefreshKey(prev => prev + 1);
   }, [activeTab]);
   
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    // Invalidate Supabase cache
+    await supabase.auth.refreshSession();
+    
     setRefreshKey(prev => prev + 1);
     toast({
       title: "Refreshing Data",

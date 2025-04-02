@@ -108,6 +108,18 @@ const AdminOrders = () => {
     window.location.reload();
   };
   
+  // Helper function to safely extract contact details properties
+  const getContactDetail = (details: any, key: string): string => {
+    if (!details) return "Unknown";
+    
+    // Handle if details is an object with properties
+    if (typeof details === 'object' && details !== null && key in details) {
+      return details[key] || "Unknown";
+    }
+    
+    return "Unknown";
+  };
+  
   if (loading) {
     return (
       <div className="space-y-4">
@@ -162,73 +174,77 @@ const AdminOrders = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order: Order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-sm">
-                    {order.id.slice(0, 8)}...
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {order.contact_details?.name || order.customer || "Unknown"}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {order.contact_details?.email || "No email"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(order.created_at || order.date || new Date()), "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    ${Number(order.total_amount || order.total).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      defaultValue={order.status}
-                      onValueChange={(value) => handleStatusChange(order.id, value)}
-                    >
-                      <SelectTrigger className="w-36 h-8">
-                        <SelectValue>
-                          <OrderStatusBadge status={order.status} />
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="quote_requested">Quote Requested</SelectItem>
-                        <SelectItem value="quote_sent">Quote Sent</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewOrder(order.id)}
+              orders.map((order: Order) => {
+                const contactDetails = order.contact_details && typeof order.contact_details === 'object' ? order.contact_details : {};
+                
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono text-sm">
+                      {order.id.slice(0, 8)}...
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {getContactDetail(contactDetails, 'name') || order.customer || "Unknown"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {getContactDetail(contactDetails, 'email') || "No email"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(order.created_at || order.date || new Date()), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      ${Number(order.total_amount || order.total).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        defaultValue={order.status}
+                        onValueChange={(value) => handleStatusChange(order.id, value)}
                       >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const email = order.contact_details?.email;
-                          if (email) {
-                            window.location.href = `mailto:${email}?subject=Order #${order.id.slice(0, 8)}`;
-                          }
-                        }}
-                        disabled={!order.contact_details?.email}
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                        <SelectTrigger className="w-36 h-8">
+                          <SelectValue>
+                            <OrderStatusBadge status={order.status} />
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="quote_requested">Quote Requested</SelectItem>
+                          <SelectItem value="quote_sent">Quote Sent</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewOrder(order.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const email = getContactDetail(contactDetails, 'email');
+                            if (email && email !== "Unknown") {
+                              window.location.href = `mailto:${email}?subject=Order #${order.id.slice(0, 8)}`;
+                            }
+                          }}
+                          disabled={getContactDetail(contactDetails, 'email') === "Unknown"}
+                        >
+                          <Mail className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -309,27 +325,27 @@ const AdminOrders = () => {
                       <>
                         <div>
                           <span className="font-medium">Name: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.name || "Unknown"}
+                          {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'name')}
                         </div>
                         <div>
                           <span className="font-medium">Email: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.email || "No email"}
+                          {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'email')}
                         </div>
                         <div>
                           <span className="font-medium">Phone: </span>
-                          {orders.find(o => o.id === activeOrder)?.contact_details?.phone || "No phone"}
+                          {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'phone')}
                         </div>
-                        {orders.find(o => o.id === activeOrder)?.contact_details?.company && (
+                        {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'company') !== "Unknown" && (
                           <div>
                             <span className="font-medium">Company: </span>
-                            {orders.find(o => o.id === activeOrder)?.contact_details?.company}
+                            {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'company')}
                           </div>
                         )}
-                        {orders.find(o => o.id === activeOrder)?.contact_details?.message && (
+                        {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'message') !== "Unknown" && (
                           <div className="mt-3">
                             <div className="font-medium">Message:</div>
                             <div className="mt-1 whitespace-pre-wrap">
-                              {orders.find(o => o.id === activeOrder)?.contact_details?.message}
+                              {getContactDetail(orders.find(o => o.id === activeOrder)?.contact_details, 'message')}
                             </div>
                           </div>
                         )}
