@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Home, X, Menu, ShoppingCart, Settings } from "lucide-react";
+import { Home, X, Menu, FileText, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -68,9 +68,11 @@ const Navbar = () => {
             </Button>
           </Link>
 
-          <Button variant="outline" size="icon">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="sr-only">Cart</span>
+          <Button variant="outline" className="hidden md:flex" asChild>
+            <Link to="/contact">
+              <FileText className="mr-2 h-5 w-5" />
+              Request a Quote
+            </Link>
           </Button>
 
           <Sheet open={open} onOpenChange={setOpen}>
@@ -117,6 +119,16 @@ const Navbar = () => {
                     )}
                   </div>
                 ))}
+                <div>
+                  <Link
+                    to="/contact"
+                    className="flex items-center gap-2 py-2 text-lg font-semibold"
+                    onClick={() => setOpen(false)}
+                  >
+                    <FileText className="h-5 w-5" />
+                    Request a Quote
+                  </Link>
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

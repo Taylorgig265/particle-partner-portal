@@ -290,12 +290,13 @@ export const useQuoteRequest = () => {
       const estimatedTotal = product ? product.price * quantity : 0;
       
       // Create a new order with the quote request information
-      // No user_id is provided, which is now allowed since we made it nullable
+      // Setting user_id explicitly to null since it's now nullable
       const { data, error } = await supabase
         .from('orders')
         .insert([{
           status: 'quote_requested',
           total_amount: estimatedTotal,
+          user_id: null,
           contact_details: {
             name: customerInfo.name,
             email: customerInfo.email,
