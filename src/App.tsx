@@ -18,9 +18,17 @@ const PageTracker = () => {
   const location = useLocation();
   
   useEffect(() => {
+    console.log(`Page changed to: ${location.pathname}`);
     // Record the page visit when the location changes
     recordPageVisit(location.pathname)
-      .catch(error => console.error('Failed to record page visit:', error));
+      .then(result => {
+        if (result.success) {
+          console.log(`Successfully recorded visit to page: ${location.pathname}`);
+        } else {
+          console.error('Failed to record page visit:', result.error);
+        }
+      })
+      .catch(error => console.error('Error in recordPageVisit:', error));
   }, [location.pathname]);
   
   return null;

@@ -20,6 +20,7 @@ export const recordPageVisit = async (page: string) => {
   const userAgent = navigator.userAgent;
   
   try {
+    console.log(`Recording visit to page: ${page} for visitor: ${visitorId}`);
     await supabase.from('visits').insert({
       visitor_id: visitorId,
       page,
@@ -36,29 +37,45 @@ export const recordPageVisit = async (page: string) => {
 // Get visitor statistics
 export const getVisitorStats = async () => {
   try {
+    console.log('Fetching visitor statistics from Supabase...');
+    
     // Get total unique visitors
     const { data: visitorsData, error: visitorsError } = await supabase
       .from('visits')
       .select('visitor_id');
       
-    if (visitorsError) throw visitorsError;
+    if (visitorsError) {
+      console.error('Error fetching visitor IDs:', visitorsError);
+      throw visitorsError;
+    }
+    
+    console.log(`Retrieved ${visitorsData?.length || 0} visit records`);
     
     // Count unique visitor IDs
     const uniqueVisitors = new Set(visitorsData?.map(v => v.visitor_id)).size;
+    console.log(`Calculated ${uniqueVisitors} unique visitors`);
     
     // Get total page views
     const { count: totalPageViews, error: viewsError } = await supabase
       .from('visits')
       .select('*', { count: 'exact' });
       
-    if (viewsError) throw viewsError;
+    if (viewsError) {
+      console.error('Error fetching page views count:', viewsError);
+      throw viewsError;
+    }
+    
+    console.log(`Retrieved ${totalPageViews} total page views`);
     
     // Get page views by page
     const { data: pageViewsData, error: pageError } = await supabase
       .from('visits')
       .select('page');
       
-    if (pageError) throw pageError;
+    if (pageError) {
+      console.error('Error fetching page views by page:', pageError);
+      throw pageError;
+    }
     
     // Count occurrences of each page
     const pageViewsByPage = pageViewsData?.reduce((acc, { page }) => {
@@ -79,7 +96,10 @@ export const getVisitorStats = async () => {
       .order('created_at', { ascending: false })
       .limit(10);
       
-    if (recentError) throw recentError;
+    if (recentError) {
+      console.error('Error fetching recent visits:', recentError);
+      throw recentError;
+    }
 
     // Get visits per day for the last 7 days
     const sevenDaysAgo = new Date();
@@ -90,7 +110,10 @@ export const getVisitorStats = async () => {
       .select('created_at')
       .gte('created_at', sevenDaysAgo.toISOString());
       
-    if (dailyError) throw dailyError;
+    if (dailyError) {
+      console.error('Error fetching daily visits:', dailyError);
+      throw dailyError;
+    }
 
     // Process daily visits into a format suitable for charts
     const visitsByDay: { [key: string]: number } = {};
@@ -106,6 +129,14 @@ export const getVisitorStats = async () => {
       date,
       visits: count
     })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    console.log('Visitor statistics results:', {
+      uniqueVisitors,
+      totalPageViews,
+      pageViewsByPageArray: pageViewsByPageArray.length,
+      recentVisits: recentVisits?.length || 0,
+      dailyVisitsData: dailyVisitsData.length
+    });
     
     return {
       uniqueVisitorCount: uniqueVisitors,
