@@ -67,11 +67,36 @@
   h2 {
     font-size: 1.5rem !important;
   }
+  
+  .grid {
+    gap: 1.5rem !important;
+  }
+  
+  .py-24 {
+    padding-top: 4rem !important;
+    padding-bottom: 4rem !important;
+  }
 }
 
 @media (max-width: 480px) {
   .content-container {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+  }
+  
+  .gap-16 {
+    gap: 1rem !important;
+  }
+  
+  .py-16 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* Dialog responsiveness */
+@media (max-width: 640px) {
+  [data-radix-popper-content-wrapper] {
+    padding: 0 0.5rem !important;
   }
 }

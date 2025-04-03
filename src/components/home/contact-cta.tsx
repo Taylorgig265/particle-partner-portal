@@ -1,8 +1,8 @@
-
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Phone, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import QuoteRequestDialog from '@/components/QuoteRequestDialog';
 
 const ContactCta = () => {
   return (
@@ -71,7 +71,7 @@ const ContactCta = () => {
               </div>
             </div>
             
-            <div className="pt-4">
+            <div className="pt-4 flex gap-4">
               <Button 
                 className="bg-white text-particle-navy hover:bg-particle-accent hover:text-white btn-animation"
                 size="lg"
@@ -82,6 +82,17 @@ const ContactCta = () => {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+              
+              <QuoteRequestDialog 
+                trigger={
+                  <Button 
+                    className="bg-particle-accent text-white hover:bg-white hover:text-particle-navy btn-animation"
+                    size="lg"
+                  >
+                    Request a Quote
+                  </Button>
+                }
+              />
             </div>
           </motion.div>
 

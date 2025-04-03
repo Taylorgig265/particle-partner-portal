@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import QuoteRequestDialog from "@/components/QuoteRequestDialog";
 
 interface NavItem {
   title: string;
@@ -68,12 +69,14 @@ const Navbar = () => {
             </Button>
           </Link>
 
-          <Button variant="outline" className="hidden md:flex" asChild>
-            <Link to="/contact">
-              <FileText className="mr-2 h-5 w-5" />
-              Request a Quote
-            </Link>
-          </Button>
+          <QuoteRequestDialog 
+            trigger={
+              <Button variant="outline" className="hidden md:flex">
+                <FileText className="mr-2 h-5 w-5" />
+                Request a Quote
+              </Button>
+            }
+          />
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -120,14 +123,17 @@ const Navbar = () => {
                   </div>
                 ))}
                 <div>
-                  <Link
-                    to="/contact"
-                    className="flex items-center gap-2 py-2 text-lg font-semibold"
-                    onClick={() => setOpen(false)}
-                  >
-                    <FileText className="h-5 w-5" />
-                    Request a Quote
-                  </Link>
+                  <QuoteRequestDialog 
+                    trigger={
+                      <button
+                        className="flex items-center gap-2 py-2 text-lg font-semibold w-full text-left"
+                        onClick={() => setOpen(false)}
+                      >
+                        <FileText className="h-5 w-5" />
+                        Request a Quote
+                      </button>
+                    }
+                  />
                 </div>
               </nav>
             </SheetContent>
