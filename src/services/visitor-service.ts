@@ -37,13 +37,14 @@ export const recordPageVisit = async (page: string) => {
 export const getVisitorStats = async () => {
   try {
     // Get total unique visitors
-    const { data: uniqueVisitors, error: uniqueError } = await supabase
+    const { data: visitorsData, error: visitorsError } = await supabase
       .from('visits')
-      .select('visitor_id')
-      .options({ count: 'exact' })
-      .limit(1);
+      .select('visitor_id');
       
-    if (uniqueError) throw uniqueError;
+    if (visitorsError) throw visitorsError;
+    
+    // Count unique visitor IDs
+    const uniqueVisitors = new Set(visitorsData?.map(v => v.visitor_id)).size;
     
     // Get total page views
     const { count: totalPageViews, error: viewsError } = await supabase
@@ -53,13 +54,23 @@ export const getVisitorStats = async () => {
     if (viewsError) throw viewsError;
     
     // Get page views by page
-    const { data: pageViewsByPage, error: pageError } = await supabase
+    const { data: pageViewsData, error: pageError } = await supabase
       .from('visits')
-      .select('page, count')
-      .options({ count: 'estimated' })
-      .group('page');
+      .select('page');
       
     if (pageError) throw pageError;
+    
+    // Count occurrences of each page
+    const pageViewsByPage = pageViewsData?.reduce((acc, { page }) => {
+      acc[page] = (acc[page] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Convert to format expected by the component
+    const pageViewsByPageArray = Object.entries(pageViewsByPage || {}).map(([page, count]) => ({
+      page,
+      count
+    }));
     
     // Get recent visits
     const { data: recentVisits, error: recentError } = await supabase
@@ -97,9 +108,9 @@ export const getVisitorStats = async () => {
     })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     return {
-      uniqueVisitorCount: new Set(uniqueVisitors?.map(v => v.visitor_id)).size,
+      uniqueVisitorCount: uniqueVisitors,
       totalPageViews,
-      pageViewsByPage: pageViewsByPage || [],
+      pageViewsByPage: pageViewsByPageArray,
       recentVisits: recentVisits || [],
       dailyVisitsData,
       success: true
