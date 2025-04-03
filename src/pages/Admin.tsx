@@ -18,16 +18,30 @@ import AdminStatistics from "@/components/admin/AdminStatistics";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { getVisitorStats } from '@/services/visitor-service';
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState("orders");  // Default to orders tab
+  const [activeTab, setActiveTab] = useState("statistics");  // Default to statistics tab
   const [refreshKey, setRefreshKey] = useState(0);
+  const [visitorStats, setVisitorStats] = useState(null);
   const { toast } = useToast();
   
   // Refresh content when tab changes
   useEffect(() => {
     setRefreshKey(prev => prev + 1);
   }, [activeTab]);
+
+  // Load visitor stats when on statistics tab
+  useEffect(() => {
+    if (activeTab === "statistics") {
+      fetchVisitorStats();
+    }
+  }, [activeTab, refreshKey]);
+  
+  const fetchVisitorStats = async () => {
+    const stats = await getVisitorStats();
+    setVisitorStats(stats);
+  };
   
   const handleRefresh = async () => {
     // Invalidate Supabase cache
@@ -100,7 +114,7 @@ const Admin = () => {
           </TabsContent>
           
           <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
-            <AdminStatistics key={`statistics-${refreshKey}`} />
+            <AdminStatistics key={`statistics-${refreshKey}`} visitorStats={visitorStats} />
           </TabsContent>
         </Tabs>
       </div>

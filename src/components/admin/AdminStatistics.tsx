@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,12 +12,22 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  LineChart,
+  Line
 } from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAdminProducts, useAdminOrders, useAdminCustomers } from "@/services/product-service";
-import { Package, ShoppingCart, Users, DollarSign } from "lucide-react";
+import { Package, ShoppingCart, Users, DollarSign, Eye } from "lucide-react";
 
-const AdminStatistics = () => {
+const AdminStatistics = ({ visitorStats }) => {
   const { products } = useAdminProducts();
   const { orders } = useAdminOrders();
   const { customers } = useAdminCustomers();
@@ -33,7 +42,7 @@ const AdminStatistics = () => {
   const [productStats, setProductStats] = useState({
     totalProducts: 0,
     outOfStock: 0,
-    topCategories: [] as { name: string; value: number }[]
+    topCategories: []
   });
   
   const [customerStats, setCustomerStats] = useState({
@@ -70,7 +79,7 @@ const AdminStatistics = () => {
           acc[product.category] = (acc[product.category] || 0) + 1;
         }
         return acc;
-      }, {} as Record<string, number>);
+      }, {});
       
       const topCategories = Object.entries(categoryCount)
         .map(([name, value]) => ({ name, value }))
@@ -101,7 +110,7 @@ const AdminStatistics = () => {
   const monthlySalesData = () => {
     if (!orders || orders.length === 0) return [];
     
-    const monthlyData: Record<string, number> = {};
+    const monthlyData = {};
     
     orders.forEach(order => {
       const date = new Date(order.created_at || order.date || new Date());
@@ -124,7 +133,7 @@ const AdminStatistics = () => {
   const orderStatusData = () => {
     if (!orders || orders.length === 0) return [];
     
-    const statusCount: Record<string, number> = {};
+    const statusCount = {};
     
     orders.forEach(order => {
       statusCount[order.status] = (statusCount[order.status] || 0) + 1;
@@ -136,12 +145,31 @@ const AdminStatistics = () => {
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
+  // Format date for recent visits display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+  
+  // Extract browser from user agent
+  const getBrowserFromUserAgent = (userAgent) => {
+    if (!userAgent) return "Unknown";
+    
+    if (userAgent.includes("Firefox")) return "Firefox";
+    if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) return "Chrome";
+    if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) return "Safari";
+    if (userAgent.includes("Edg")) return "Edge";
+    if (userAgent.includes("MSIE") || userAgent.includes("Trident/")) return "Internet Explorer";
+    
+    return "Other";
+  };
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dashboard Statistics</h2>
       
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
@@ -189,6 +217,18 @@ const AdminStatistics = () => {
             </div>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Unique Visitors</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
+              <div className="text-2xl font-bold">{visitorStats?.uniqueVisitorCount || 0}</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Charts */}
@@ -197,6 +237,7 @@ const AdminStatistics = () => {
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="visitors">Visitors</TabsTrigger>
         </TabsList>
         
         <TabsContent value="sales" className="space-y-4">
@@ -367,6 +408,100 @@ const AdminStatistics = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="visitors" className="space-y-4">
+          {/* New Visitor Analytics Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Visitors</CardTitle>
+              <CardDescription>
+                Number of visitors over the last 7 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={visitorStats?.dailyVisitsData || []}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="visits" 
+                    stroke="#8884d8" 
+                    activeDot={{ r: 8 }} 
+                    name="Page Views"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Page Views</CardTitle>
+                <CardDescription>
+                  Total number of page views
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center h-40">
+                <div className="text-4xl font-bold">{visitorStats?.totalPageViews || 0}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Unique Visitors</CardTitle>
+                <CardDescription>
+                  Number of unique visitors
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center h-40">
+                <div className="text-4xl font-bold">{visitorStats?.uniqueVisitorCount || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Visits</CardTitle>
+              <CardDescription>
+                Most recent page views
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Page</TableHead>
+                    <TableHead>Browser</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visitorStats?.recentVisits && visitorStats.recentVisits.length > 0 ? (
+                    visitorStats.recentVisits.map((visit, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{visit.page}</TableCell>
+                        <TableCell>{getBrowserFromUserAgent(visit.user_agent)}</TableCell>
+                        <TableCell>{formatDate(visit.created_at)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center">No visits recorded yet</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

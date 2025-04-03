@@ -1,6 +1,7 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 import Index from '@/pages/Index';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
@@ -9,11 +10,26 @@ import ProductDetail from '@/pages/ProductDetail';
 import Admin from '@/pages/Admin';
 import NotFound from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
+import { recordPageVisit } from '@/services/visitor-service';
 import './App.css';
+
+// Component to track page views
+const PageTracker = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Record the page visit when the location changes
+    recordPageVisit(location.pathname)
+      .catch(error => console.error('Failed to record page visit:', error));
+  }, [location.pathname]);
+  
+  return null;
+};
 
 function App() {
   return (
     <Router>
+      <PageTracker />
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<Index />} />
