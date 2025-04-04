@@ -178,7 +178,7 @@ const AdminStatistics = ({ visitorStats }) => {
           <CardContent>
             <div className="flex items-center">
               <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-              <div className="text-2xl font-bold">${orderStats.totalSales.toFixed(2)}</div>
+              <div className="text-2xl font-bold">MWK {orderStats.totalSales.toFixed(2)}</div>
             </div>
           </CardContent>
         </Card>
@@ -260,7 +260,7 @@ const AdminStatistics = ({ visitorStats }) => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="sales" fill="#8884d8" name="Sales ($)" />
+                  <Bar dataKey="sales" fill="#8884d8" name="Sales (MWK)" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -275,7 +275,7 @@ const AdminStatistics = ({ visitorStats }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-center h-40">
-                <div className="text-4xl font-bold">${orderStats.avgOrderValue.toFixed(2)}</div>
+                <div className="text-4xl font-bold">MWK {orderStats.avgOrderValue.toFixed(2)}</div>
               </CardContent>
             </Card>
             
@@ -287,7 +287,7 @@ const AdminStatistics = ({ visitorStats }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-center h-40">
-                <div className="text-4xl font-bold">${customerStats.avgSpendPerCustomer.toFixed(2)}</div>
+                <div className="text-4xl font-bold">MWK {customerStats.avgSpendPerCustomer.toFixed(2)}</div>
               </CardContent>
             </Card>
           </div>

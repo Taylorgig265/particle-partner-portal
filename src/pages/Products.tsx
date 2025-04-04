@@ -193,7 +193,7 @@ const Products = () => {
                             <div className="p-6">
                               <h3 className="text-xl font-bold text-particle-navy mb-2">{product.name}</h3>
                               <p className="text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                              <p className="text-particle-accent font-bold mb-4">${parseFloat(product.price.toString()).toFixed(2)}</p>
+                              <p className="text-particle-accent font-bold mb-4">MWK {parseFloat(product.price.toString()).toFixed(2)}</p>
                               <div className="flex items-center text-particle-navy font-medium group-hover:text-particle-accent transition-colors">
                                 <Link to={`/products/${product.id}`} className="flex items-center">
                                   Learn more

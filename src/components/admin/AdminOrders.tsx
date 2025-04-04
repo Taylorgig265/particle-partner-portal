@@ -210,7 +210,7 @@ const AdminOrders = () => {
                       {format(new Date(order.created_at || order.date || new Date()), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell className="font-medium">
-                      ${Number(order.total_amount || order.total).toFixed(2)}
+                      MWK {Number(order.total_amount || order.total).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Select
@@ -309,12 +309,12 @@ const AdminOrders = () => {
                           <div>
                             <div className="font-medium">{item.product_name || "Unknown Product"}</div>
                             <div className="text-xs text-gray-500">
-                              Qty: {item.quantity} × ${Number(item.price_at_purchase || 0).toFixed(2)}
+                              Qty: {item.quantity} × MWK {Number(item.price_at_purchase || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>
                         <div className="font-medium">
-                          ${((Number(item.price_at_purchase || 0)) * item.quantity).toFixed(2)}
+                          MWK {((Number(item.price_at_purchase || 0)) * item.quantity).toFixed(2)}
                         </div>
                       </div>
                     ))
@@ -327,7 +327,7 @@ const AdminOrders = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Total Amount</span>
                     <span className="font-medium">
-                      ${orderItems.reduce((sum, item) => sum + ((Number(item.price_at_purchase || 0)) * item.quantity), 0).toFixed(2)}
+                      MWK {orderItems.reduce((sum, item) => sum + ((Number(item.price_at_purchase || 0)) * item.quantity), 0).toFixed(2)}
                     </span>
                   </div>
                 </div>

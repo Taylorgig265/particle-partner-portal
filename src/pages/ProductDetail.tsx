@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -167,7 +168,7 @@ const ProductDetail = () => {
                   <p className="text-gray-600 mb-6">{product?.description}</p>
                   
                   <div className="text-3xl font-bold text-particle-accent mb-8">
-                    ${product?.price ? parseFloat(product.price.toString()).toFixed(2) : '0.00'}
+                    MWK {product?.price ? parseFloat(product.price.toString()).toFixed(2) : '0.00'}
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-4 mb-8">
