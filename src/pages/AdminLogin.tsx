@@ -24,7 +24,7 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAdminAuth();
+  const { login, isAuthenticated } = useAdminAuth();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -51,7 +51,7 @@ const AdminLogin = () => {
       } else {
         toast({
           title: "Login failed",
-          description: error || "Invalid email or password.",
+          description: error || "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive",
         });
       }
@@ -81,7 +81,7 @@ const AdminLogin = () => {
             Admin Login
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access the admin panel
+            Enter your Supabase credentials to access the admin panel
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -96,7 +96,7 @@ const AdminLogin = () => {
                     <FormControl>
                       <Input 
                         type="email" 
-                        placeholder="admin@example.com" 
+                        placeholder="Enter your email" 
                         disabled={isLoading}
                         {...field}
                       />
