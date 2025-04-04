@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,9 +55,9 @@ const AdminStatistics = ({ visitorStats }) => {
   useEffect(() => {
     if (orders && orders.length > 0) {
       const totalSales = orders.reduce((sum, order) => sum + Number(order.total_amount || order.total || 0), 0);
-      const avgOrderValue = totalSales / orders.length;
+      // Fix TypeScript error: Convert totalSales and orders.length to numbers before division
+      const avgOrderValue = orders.length > 0 ? Number(totalSales) / Number(orders.length) : 0;
       const pendingOrders = orders.filter(order => order.status === 'pending').length;
-      // Fix for TS error - check for "delivered" instead of "completed"
       const completedOrders = orders.filter(order => order.status === 'delivered').length;
       
       setOrderStats({

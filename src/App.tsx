@@ -22,7 +22,14 @@ const PageTracker = () => {
   
   useEffect(() => {
     console.log(`Page changed to: ${location.pathname}`);
-    // Record the page visit when the location changes
+    
+    // Skip recording visits to admin pages
+    if (location.pathname.startsWith('/admin')) {
+      console.log('Admin page visit - not recording in statistics');
+      return;
+    }
+    
+    // Record the page visit when the location changes (for non-admin pages only)
     recordPageVisit(location.pathname)
       .then(result => {
         if (result.success) {
