@@ -1,10 +1,11 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminAuthContextType {
   isAuthenticated: boolean;
-  login: () => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -26,38 +27,90 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   // Check if the user is authenticated on mount
   useEffect(() => {
-    const checkAuth = () => {
-      const adminAuthenticated = localStorage.getItem("adminAuthenticated");
-      const adminAuthTime = localStorage.getItem("adminAuthTime");
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
       
-      if (adminAuthenticated === "true" && adminAuthTime) {
-        // Authentication expires after 8 hours
-        const authTime = parseInt(adminAuthTime, 10);
-        const currentTime = Date.now();
-        const eightHoursInMs = 8 * 60 * 60 * 1000;
+      if (data.session) {
+        // Check if user has admin role
+        const { data: userData } = await supabase.auth.getUser();
+        const email = userData.user?.email;
         
-        if (currentTime - authTime < eightHoursInMs) {
+        // For now we'll consider only the specific admin email as admin
+        // In a real implementation, you'd check against a roles table
+        if (email === "admin@example.com") {
           setIsAuthenticated(true);
-          return;
+        } else {
+          // If not admin, log them out
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
         }
+      } else {
+        setIsAuthenticated(false);
       }
-      
-      // Clear authentication if expired
-      localStorage.removeItem("adminAuthenticated");
-      localStorage.removeItem("adminAuthTime");
-      setIsAuthenticated(false);
     };
     
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Check if user has admin role when they sign in
+        setTimeout(async () => {
+          const { data } = await supabase.auth.getUser();
+          const email = data.user?.email;
+          
+          // For now we'll consider only the specific admin email as admin
+          if (email === "admin@example.com") {
+            setIsAuthenticated(true);
+          } else {
+            // If not admin, log them out
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+          }
+        }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+      }
+    });
+    
     checkAuth();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = () => {
-    setIsAuthenticated(true);
+  const login = async (email: string, password: string) => {
+    try {
+      // We only want to allow the admin@example.com account
+      if (email !== "admin@example.com") {
+        return { success: false, error: "Invalid credentials" };
+      }
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error("Login error:", error.message);
+        return { success: false, error: error.message };
+      }
+      
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      console.error("Unexpected login error:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unknown error occurred" 
+      };
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("adminAuthenticated");
-    localStorage.removeItem("adminAuthTime");
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Logout error:", error.message);
+    }
     setIsAuthenticated(false);
   };
 
