@@ -8,9 +8,12 @@ import Contact from '@/pages/Contact';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import Admin from '@/pages/Admin';
+import AdminLogin from '@/pages/AdminLogin';
 import NotFound from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 import { recordPageVisit } from '@/services/visitor-service';
+import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import './App.css';
 
 // Component to track page views
@@ -36,21 +39,28 @@ const PageTracker = () => {
 
 function App() {
   return (
-    <Router>
-      <PageTracker />
-      <AnimatePresence mode="wait">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AnimatePresence>
-      <Toaster />
-    </Router>
+    <AdminAuthProvider>
+      <Router>
+        <PageTracker />
+        <AnimatePresence mode="wait">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AnimatePresence>
+        <Toaster />
+      </Router>
+    </AdminAuthProvider>
   );
 }
 

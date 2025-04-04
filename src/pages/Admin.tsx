@@ -7,7 +7,8 @@ import {
   Users,
   Home,
   BarChart,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,16 +16,19 @@ import AdminProducts from "@/components/admin/AdminProducts";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminStatistics from "@/components/admin/AdminStatistics";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorStats } from '@/services/visitor-service';
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("statistics");  // Default to statistics tab
   const [refreshKey, setRefreshKey] = useState(0);
   const [visitorStats, setVisitorStats] = useState(null);
   const { toast } = useToast();
+  const { logout } = useAdminAuth();
+  const navigate = useNavigate();
   
   // Refresh content when tab changes
   useEffect(() => {
@@ -54,6 +58,15 @@ const Admin = () => {
     });
   };
   
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    navigate("/admin/login");
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -77,6 +90,10 @@ const Admin = () => {
                 <Home className="mr-2" size={16} />
                 Back to Site
               </Link>
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
           </div>
         </header>
