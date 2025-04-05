@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gallery: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -94,6 +121,7 @@ export type Database = {
       }
       products: {
         Row: {
+          additional_images: string[] | null
           category: string | null
           created_at: string
           description: string | null
@@ -106,6 +134,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_images?: string[] | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -118,6 +147,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_images?: string[] | null
           category?: string | null
           created_at?: string
           description?: string | null

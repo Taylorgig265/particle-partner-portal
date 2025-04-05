@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAdminOrders, Order } from "@/services/product-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +14,16 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  TooltipProps
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 
-const AdminStatistics = () => {
+interface AdminStatisticsProps {
+  visitorStats?: any; // Optional prop for visitor statistics
+}
+
+const AdminStatistics: React.FC<AdminStatisticsProps> = ({ visitorStats }) => {
   const { orders, loading, error } = useAdminOrders();
   const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
   const [ordersByMonth, setOrdersByMonth] = useState<any[]>([]);
@@ -91,6 +97,12 @@ const AdminStatistics = () => {
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
+  // Fix for the Tooltip formatter - explicitly type the value as string or number
+  const formatTooltipValue = (value: string | number, name: string) => {
+    if (name === "revenue") return [formatCurrency(Number(value)), "Revenue"];
+    return [value, "Orders"];
+  };
+
   if (loading) return <div className="py-8 text-center">Loading statistics...</div>;
   
   if (error) return <div className="py-8 text-center text-red-500">Error loading statistics: {error}</div>;
@@ -154,10 +166,7 @@ const AdminStatistics = () => {
                       <XAxis dataKey="month" />
                       <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                       <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                      <Tooltip formatter={(value, name) => {
-                        if (name === "revenue") return [`${formatCurrency(value)}`, "Revenue"];
-                        return [value, "Orders"];
-                      }} />
+                      <Tooltip formatter={formatTooltipValue} />
                       <Legend />
                       <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#8884d8" />
                       <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />

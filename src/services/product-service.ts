@@ -15,7 +15,7 @@ export interface Product {
   full_description?: string;
   updated_at?: string;
   created_at?: string;
-  additional_images?: string[]; // Added this field for multiple images
+  additional_images?: string[]; // This field now exists in the database
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
@@ -115,7 +115,7 @@ export const getProducts = async (): Promise<Product[]> => {
       ...product,
       imageUrl: product.image_url,
       fullDescription: product.full_description,
-      additional_images: product.additional_images || [] // Ensure additional_images is always available
+      additional_images: product.additional_images || [] // Now coming from database
     }));
   } catch (err) {
     console.error('Unexpected error fetching products:', err);
@@ -136,19 +136,11 @@ export const getProductById = async (id: string): Promise<Product | undefined> =
       return undefined;
     }
     
-    // For now, we'll use placeholder images if no additional images are provided
-    const additionalImages = data.additional_images || [
-      'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=800&q=80',
-      'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80',
-      'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80',
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80'
-    ];
-    
     return {
       ...data,
       imageUrl: data.image_url,
       fullDescription: data.full_description,
-      additional_images: additionalImages
+      additional_images: data.additional_images || [] // Now coming from database
     };
   } catch (err) {
     console.error('Unexpected error fetching product by ID:', err);
@@ -336,7 +328,6 @@ export const useQuoteRequest = () => {
   return { submitQuoteRequest };
 };
 
-// Admin hooks
 export const useAdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,7 +363,8 @@ export const useAdminProducts = () => {
           price: product.price,
           category: product.category,
           image_url: product.image_url || product.imageUrl,
-          in_stock: product.in_stock
+          in_stock: product.in_stock,
+          additional_images: product.additional_images || [] // Support for updating additional images
         })
         .eq('id', product.id)
         .select();
@@ -425,7 +417,8 @@ export const useAdminProducts = () => {
           price: product.price,
           category: product.category,
           image_url: product.image_url || product.imageUrl,
-          in_stock: product.in_stock || true
+          in_stock: product.in_stock || true,
+          additional_images: product.additional_images || []
         }])
         .select();
 
@@ -702,5 +695,101 @@ export const useAdminCustomers = () => {
     loading,
     error,
     fetchCustomerOrders
+  };
+};
+
+// New hook for gallery functionality
+export interface GalleryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Hook for managing gallery items
+export const useGallery = () => {
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchGalleryItems = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching gallery items:', error);
+        setError('Failed to load gallery. Please try again.');
+        setItems([]);
+        return;
+      }
+      
+      setItems(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Unexpected error fetching gallery items:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('gallery')
+        .insert([item])
+        .select();
+        
+      if (error) {
+        console.error('Error adding gallery item:', error);
+        return null;
+      }
+      
+      setItems(prev => [data[0], ...prev]);
+      return data[0];
+    } catch (err) {
+      console.error('Unexpected error adding gallery item:', err);
+      return null;
+    }
+  };
+
+  const deleteGalleryItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('gallery')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error deleting gallery item:', error);
+        return false;
+      }
+      
+      setItems(prev => prev.filter(item => item.id !== id));
+      return true;
+    } catch (err) {
+      console.error('Unexpected error deleting gallery item:', err);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchGalleryItems();
+  }, []);
+
+  return {
+    items,
+    loading,
+    error,
+    fetchGalleryItems,
+    addGalleryItem,
+    deleteGalleryItem
   };
 };

@@ -8,7 +8,8 @@ import {
   Home,
   BarChart,
   RefreshCw,
-  LogOut
+  LogOut,
+  Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ import AdminProducts from "@/components/admin/AdminProducts";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminStatistics from "@/components/admin/AdminStatistics";
+import AdminGallery from "@/components/admin/AdminGallery";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +27,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("statistics");  // Default to statistics tab
   const [refreshKey, setRefreshKey] = useState(0);
-  const [visitorStats, setVisitorStats] = useState(null);
+  const [visitorStats, setVisitorStats] = useState<any>(null);
   const { toast } = useToast();
   const { logout } = useAdminAuth();
   const navigate = useNavigate();
@@ -99,7 +101,7 @@ const Admin = () => {
         </header>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-14">
+          <TabsList className="grid w-full grid-cols-5 h-14">
             <TabsTrigger value="products" className="flex items-center space-x-2">
               <Package size={18} />
               <span>Products</span>
@@ -111,6 +113,10 @@ const Admin = () => {
             <TabsTrigger value="customers" className="flex items-center space-x-2">
               <Users size={18} />
               <span>Customers</span>
+            </TabsTrigger>
+            <TabsTrigger value="gallery" className="flex items-center space-x-2">
+              <Image size={18} />
+              <span>Gallery</span>
             </TabsTrigger>
             <TabsTrigger value="statistics" className="flex items-center space-x-2">
               <BarChart size={18} />
@@ -128,6 +134,10 @@ const Admin = () => {
           
           <TabsContent value="customers" className="bg-white p-6 rounded-lg shadow">
             <AdminCustomers key={`customers-${refreshKey}`} />
+          </TabsContent>
+          
+          <TabsContent value="gallery" className="bg-white p-6 rounded-lg shadow">
+            <AdminGallery key={`gallery-${refreshKey}`} />
           </TabsContent>
           
           <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
