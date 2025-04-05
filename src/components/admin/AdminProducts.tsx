@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useAdminProducts, Product } from "@/services/product-service";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/use-toast";
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const AdminProducts = () => {
   const { products, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
@@ -298,7 +298,7 @@ const AdminProducts = () => {
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>${parseFloat(product.price.toString()).toFixed(2)}</TableCell>
+                <TableCell>{formatCurrency(parseFloat(product.price.toString()))}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {product.in_stock ? 'In Stock' : 'Out of Stock'}

@@ -114,7 +114,8 @@ export const getProducts = async (): Promise<Product[]> => {
     return data.map((product: any) => ({
       ...product,
       imageUrl: product.image_url,
-      fullDescription: product.full_description
+      fullDescription: product.full_description,
+      additional_images: product.additional_images || [] // Ensure additional_images is always available
     }));
   } catch (err) {
     console.error('Unexpected error fetching products:', err);
