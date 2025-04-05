@@ -47,8 +47,8 @@ const Hero = () => {
       </div>
 
       <div className="content-container relative z-10 w-full py-12">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
-          <div className="w-full lg:w-1/2 order-2 lg:order-1">
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -106,37 +106,6 @@ const Hero = () => {
                   </Link>
                 </Button>
               </motion.div>
-            </motion.div>
-          </div>
-          
-          <div className="w-full lg:w-1/2 order-1 lg:order-2">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="relative mx-auto max-w-lg"
-            >
-              <div className="absolute inset-0 -m-6 bg-particle-secondary/10 rounded-full blur-xl"></div>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                <img 
-                  src="https://images.unsplash.com/photo-1583912025059-b0da5eb840fc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                  alt="Medical Equipment" 
-                  className="w-full h-auto object-cover transform transition-transform duration-700 hover:scale-105" 
-                />
-              </div>
-              <div className="absolute -bottom-6 -right-6 p-6 bg-white/90 backdrop-blur-sm shadow-lg rounded-2xl border border-gray-100 z-10">
-                <div className="flex items-center space-x-3">
-                  <div className="h-12 w-12 rounded-full bg-particle-navy/10 flex items-center justify-center">
-                    <svg className="h-6 w-6 text-particle-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-particle-navy">Quality Guaranteed</h4>
-                    <p className="text-xs text-gray-500">CE/FDA Approved Equipment</p>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
