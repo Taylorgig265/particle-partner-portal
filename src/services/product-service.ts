@@ -15,6 +15,7 @@ export interface Product {
   full_description?: string;
   updated_at?: string;
   created_at?: string;
+  additional_images?: string[]; // Added this field for multiple images
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
@@ -134,10 +135,19 @@ export const getProductById = async (id: string): Promise<Product | undefined> =
       return undefined;
     }
     
+    // For now, we'll use placeholder images if no additional images are provided
+    const additionalImages = data.additional_images || [
+      'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=800&q=80',
+      'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80',
+      'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80'
+    ];
+    
     return {
       ...data,
       imageUrl: data.image_url,
-      fullDescription: data.full_description
+      fullDescription: data.full_description,
+      additional_images: additionalImages
     };
   } catch (err) {
     console.error('Unexpected error fetching product by ID:', err);

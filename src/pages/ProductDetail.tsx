@@ -18,6 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { formatCurrency } from '@/lib/utils';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +33,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,8 +47,6 @@ const ProductDetail = () => {
           throw new Error("Product ID is missing");
         }
         
-        // Use the local getProductById function instead of direct Supabase query
-        // This handles the numeric IDs from our mock data
         const productData = await getProductById(id);
         
         if (productData) {
@@ -62,6 +69,14 @@ const ProductDetail = () => {
     
     fetchProduct();
   }, [id, toast]);
+
+  // Get all product images (main + additional)
+  const getAllProductImages = () => {
+    if (!product) return [];
+    
+    const mainImage = product.image_url || product.imageUrl || 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+    return [mainImage, ...(product.additional_images || [])];
+  };
 
   if (loading) {
     return (
@@ -99,6 +114,8 @@ const ProductDetail = () => {
     );
   }
 
+  const allImages = getAllProductImages();
+
   return (
     <AnimatePresence>
       <motion.div
@@ -121,22 +138,61 @@ const ProductDetail = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Product image section */}
+              {/* Product image carousel section */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
+                className="space-y-6"
               >
-                <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100 h-full">
-                  <img 
-                    src={product?.image_url || product?.imageUrl || 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
-                    alt={product?.name} 
-                    className="w-full h-[400px] object-cover object-center"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                    }}
-                  />
+                <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
+                  <Carousel className="w-full">
+                    <CarouselContent>
+                      {allImages.map((image, index) => (
+                        <CarouselItem key={index}>
+                          <div className="p-1">
+                            <div className="overflow-hidden">
+                              <img 
+                                src={image} 
+                                alt={`${product?.name} - view ${index + 1}`}
+                                className="w-full h-[400px] object-cover object-center"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="-left-4 bg-white" />
+                    <CarouselNext className="-right-4 bg-white" />
+                  </Carousel>
+                </div>
+                
+                {/* Thumbnail gallery */}
+                <div className="grid grid-cols-4 gap-2">
+                  {allImages.slice(0, 4).map((image, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`
+                        cursor-pointer border-2 rounded-lg overflow-hidden
+                        ${selectedImageIndex === index ? 'border-particle-navy' : 'border-transparent'}
+                      `}
+                    >
+                      <img 
+                        src={image}
+                        alt={`${product?.name} thumbnail ${index + 1}`}
+                        className="w-full h-20 object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               </motion.div>
               
@@ -168,7 +224,7 @@ const ProductDetail = () => {
                   <p className="text-gray-600 mb-6">{product?.description}</p>
                   
                   <div className="text-3xl font-bold text-particle-accent mb-8">
-                    MWK {product?.price ? parseFloat(product.price.toString()).toFixed(2) : '0.00'}
+                    {formatCurrency(product?.price || 0)}
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-4 mb-8">
