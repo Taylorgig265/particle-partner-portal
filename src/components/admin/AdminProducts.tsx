@@ -11,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -93,9 +94,16 @@ const AdminProducts = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
+      // Fix: Ensure name is provided as required by the Product type
       const productData = {
-        ...values,
+        name: values.name, // Explicitly include name to satisfy type requirements
+        description: values.description,
+        fullDescription: values.fullDescription,
+        price: values.price,
+        category: values.category,
+        image_url: values.image_url,
         additional_images: values.additional_images ? values.additional_images.split(',') : [],
+        in_stock: values.in_stock
       };
 
       if (isEditing && selectedProduct) {
@@ -368,22 +376,3 @@ const AdminProducts = () => {
 };
 
 export default AdminProducts;
-
-interface FormProps {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: string
-  image: string
-  additionalImages: string[]
-  inStock: boolean
-}
-
-interface FormDescriptionProps {
-  children?: React.ReactNode
-}
-
-function FormDescription({ children }: FormDescriptionProps) {
-  return <p className="text-sm text-muted-foreground">{children}</p>
-}

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -326,89 +325,6 @@ export const getProductById = async (id: string): Promise<Product | null> => {
   }
 };
 
-export const useGallery = () => {
-  const [items, setItems] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchGalleryItems = async (projectId?: string) => {
-    try {
-      setLoading(true);
-      let query = supabase.from('gallery').select('*');
-      
-      if (projectId) {
-        query = query.eq('project_id', projectId);
-      }
-      
-      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      
-      setItems(data as GalleryItem[] || []);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching gallery items:', err);
-      setError(err.message || 'Failed to fetch gallery items');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGalleryItems();
-  }, []);
-
-  const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      // If project_id is "none" or empty, set it to null
-      const dataToInsert = {
-        ...itemData,
-        project_id: itemData.project_id === "none" || !itemData.project_id ? null : itemData.project_id
-      };
-
-      const { data, error } = await supabase
-        .from('gallery')
-        .insert(dataToInsert)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setItems(prev => [data as GalleryItem, ...prev]);
-      return data as GalleryItem;
-    } catch (err: any) {
-      console.error('Error adding gallery item:', err);
-      throw err;
-    }
-  };
-
-  const deleteGalleryItem = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('gallery')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setItems(prev => prev.filter(item => item.id !== id));
-      return true;
-    } catch (err: any) {
-      console.error('Error deleting gallery item:', err);
-      return false;
-    }
-  };
-
-  return {
-    items,
-    loading,
-    error,
-    fetchGalleryItems,
-    addGalleryItem,
-    deleteGalleryItem
-  };
-};
-
 export const useQuoteRequest = () => {
   const submitQuoteRequest = async (
     productId: string,
@@ -432,12 +348,9 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // For the Supabase database schema, we need to ensure we're using the correct table
-      const { data, error } = await supabase
-        .from('quote_requests')
-        .insert(quoteRequest)
-        .select()
-        .single();
+      // Fix: Use direct fetch for quote_requests since it's not in the Supabase types
+      // This is a temporary solution until we add quote_requests to the database
+      const { data, error } = await supabase.rpc('submit_quote_request', quoteRequest);
 
       if (error) throw error;
 
@@ -554,5 +467,88 @@ export const useAdminCustomers = () => {
     loading,
     error,
     fetchCustomers
+  };
+};
+
+export const useGallery = () => {
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchGalleryItems = async (projectId?: string) => {
+    try {
+      setLoading(true);
+      let query = supabase.from('gallery').select('*');
+      
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+      
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      
+      setItems(data as GalleryItem[] || []);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching gallery items:', err);
+      setError(err.message || 'Failed to fetch gallery items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGalleryItems();
+  }, []);
+
+  const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      // If project_id is "none" or empty, set it to null
+      const dataToInsert = {
+        ...itemData,
+        project_id: itemData.project_id === "none" || !itemData.project_id ? null : itemData.project_id
+      };
+
+      const { data, error } = await supabase
+        .from('gallery')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setItems(prev => [data as GalleryItem, ...prev]);
+      return data as GalleryItem;
+    } catch (err: any) {
+      console.error('Error adding gallery item:', err);
+      throw err;
+    }
+  };
+
+  const deleteGalleryItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('gallery')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setItems(prev => prev.filter(item => item.id !== id));
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting gallery item:', err);
+      return false;
+    }
+  };
+
+  return {
+    items,
+    loading,
+    error,
+    fetchGalleryItems,
+    addGalleryItem,
+    deleteGalleryItem
   };
 };
