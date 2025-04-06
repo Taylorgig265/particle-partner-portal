@@ -480,16 +480,26 @@ export const useAdminOrders = () => {
 
   // Implementation for updating order status
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
-    console.log(`Updating order ${orderId} to status ${status}`);
-    
-    // Update local state to reflect the change
-    setOrders(prev => 
-      prev.map(order => 
-        order.id === orderId ? { ...order, status } : order
-      )
-    );
-    
-    return true;
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId);
+        
+      if (error) throw error;
+      
+      // Update local state to reflect the change
+      setOrders(prev => 
+        prev.map(order => 
+          order.id === orderId ? { ...order, status } : order
+        )
+      );
+      
+      return true;
+    } catch (err) {
+      console.error(`Error updating order status:`, err);
+      return false;
+    }
   };
 
   useEffect(() => {

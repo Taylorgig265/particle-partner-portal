@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { useAdminCustomers } from '@/services/product-service';
 import {
   Table,
@@ -9,18 +10,34 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminCustomers = () => {
   const { customers, loading, error, fetchCustomers } = useAdminCustomers();
   const [customerOrders, setCustomerOrders] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
-  // Mock implementation for fetchCustomerOrders
-  const fetchCustomerOrders = async (customerId: string) => {
-    // For now, this is just a placeholder implementation
-    console.log(`Fetching orders for customer: ${customerId}`);
-    return [];
-  };
+  // Improved implementation for fetchCustomerOrders using supabase
+  const fetchCustomerOrders = useCallback(async (customerId: string) => {
+    try {
+      console.log(`Fetching orders for customer: ${customerId}`);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', customerId)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching customer orders:', error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error('Exception fetching customer orders:', err);
+      return [];
+    }
+  }, []);
 
   const handleCustomerClick = async (customer: any) => {
     setSelectedCustomer(customer);
@@ -53,7 +70,7 @@ const AdminCustomers = () => {
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id} className="cursor-pointer hover:bg-accent" onClick={() => handleCustomerClick(customer)}>
-                    <TableCell>{customer.full_name || 'N/A'}</TableCell>
+                    <TableCell>{customer.full_name || customer.name || 'N/A'}</TableCell>
                     <TableCell>{customer.email}</TableCell>
                   </TableRow>
                 ))}
@@ -64,13 +81,17 @@ const AdminCustomers = () => {
             {selectedCustomer ? (
               <div>
                 <h3 className="text-xl font-semibold mb-2">Customer Details</h3>
-                <p>Name: {selectedCustomer.full_name || 'N/A'}</p>
+                <p>Name: {selectedCustomer.full_name || selectedCustomer.name || 'N/A'}</p>
                 <p>Email: {selectedCustomer.email}</p>
                 <h3 className="text-xl font-semibold mt-4 mb-2">Orders</h3>
                 {customerOrders.length > 0 ? (
                   <ul>
                     {customerOrders.map((order) => (
-                      <li key={order.id}>Order ID: {order.id}</li>
+                      <li key={order.id} className="p-2 mb-2 border rounded">
+                        <div className="font-medium">Order ID: {order.id.slice(0, 8)}...</div>
+                        <div>Status: {order.status}</div>
+                        <div>Amount: MWK {Number(order.total_amount).toFixed(2)}</div>
+                      </li>
                     ))}
                   </ul>
                 ) : (
