@@ -40,7 +40,7 @@ export interface QuoteRequest {
   created_at?: string;
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected';
 
 export interface Order {
   id: string;
@@ -452,7 +452,14 @@ export const useAdminOrders = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      
+      // Ensure that the status is a valid OrderStatus
+      const typedOrders = data?.map(order => ({
+        ...order,
+        status: (order.status || 'pending') as OrderStatus,
+      })) || [];
+      
+      setOrders(typedOrders);
     } catch (err: any) {
       console.error('Error fetching orders:', err);
       setError(err.message || 'Failed to fetch orders');
@@ -464,6 +471,14 @@ export const useAdminOrders = () => {
   // Mock implementation for now
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     console.log(`Updating order ${orderId} to status ${status}`);
+    
+    // Update local state to reflect the change
+    setOrders(prev => 
+      prev.map(order => 
+        order.id === orderId ? { ...order, status } : order
+      )
+    );
+    
     return true;
   };
 

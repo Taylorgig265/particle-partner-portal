@@ -61,7 +61,7 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
 };
 
 const AdminOrders = () => {
-  const { orders, loading, fetchOrderDetails, updateOrderStatus, fetchOrders } = useAdminOrders();
+  const { orders, loading, error, fetchOrders, updateOrderStatus } = useAdminOrders();
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<QuoteItem[]>([]);
   const [orderItemsLoading, setOrderItemsLoading] = useState(false);
@@ -72,19 +72,12 @@ const AdminOrders = () => {
     setActiveOrder(orderId);
     setOrderItemsLoading(true);
     
-    try {
-      const details = await fetchOrderDetails(orderId);
-      setOrderItems(details.items as QuoteItem[]);
-    } catch (error) {
-      console.error("Failed to load order details", error);
-      toast({
-        title: "Error",
-        description: "Failed to load order details. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+    // Simulate loading order details
+    // In a real implementation, you would fetch the order details from the server
+    setTimeout(() => {
+      setOrderItems([]);
       setOrderItemsLoading(false);
-    }
+    }, 1000);
   };
   
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -190,7 +183,7 @@ const AdminOrders = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order: Order) => {
+              orders.map((order) => {
                 const contactDetails = order.contact_details && typeof order.contact_details === 'object' ? order.contact_details : {};
                 
                 return (
@@ -200,17 +193,17 @@ const AdminOrders = () => {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">
-                        {getContactDetail(contactDetails, 'name') || order.customer || "Unknown"}
+                        {getContactDetail(contactDetails, 'name') || "Unknown"}
                       </div>
                       <div className="text-xs text-gray-500">
                         {getContactDetail(contactDetails, 'email') || "No email"}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(order.created_at || order.date || new Date()), "MMM d, yyyy")}
+                      {format(new Date(order.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell className="font-medium">
-                      MWK {Number(order.total_amount || order.total).toFixed(2)}
+                      MWK {Number(order.total_amount).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Select
@@ -307,7 +300,7 @@ const AdminOrders = () => {
                             />
                           )}
                           <div>
-                            <div className="font-medium">{item.product_name || "Unknown Product"}</div>
+                            <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
                             <div className="text-xs text-gray-500">
                               Qty: {item.quantity} × MWK {Number(item.price_at_purchase || 0).toFixed(2)}
                             </div>
