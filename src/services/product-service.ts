@@ -360,9 +360,15 @@ export const useGallery = () => {
 
   const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // If project_id is "none" or empty, set it to null
+      const dataToInsert = {
+        ...itemData,
+        project_id: itemData.project_id === "none" || !itemData.project_id ? null : itemData.project_id
+      };
+
       const { data, error } = await supabase
         .from('gallery')
-        .insert(itemData)
+        .insert(dataToInsert)
         .select()
         .single();
 
