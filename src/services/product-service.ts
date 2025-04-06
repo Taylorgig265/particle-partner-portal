@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -26,6 +27,41 @@ export interface GalleryItem {
   project_id: string | null;
 }
 
+export interface QuoteRequest {
+  id?: string;
+  product_id: string;
+  quantity: number;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  message: string;
+  status?: string;
+  created_at?: string;
+}
+
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  user_id: string | null;
+  status: OrderStatus;
+  total_amount: number;
+  shipping_address: any;
+  contact_details: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuoteItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  created_at: string;
+  product?: Product;
+}
+
 export const useAdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -40,7 +76,14 @@ export const useAdminProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Map database fields to match our Product interface
+      const mappedProducts = data?.map(item => ({
+        ...item,
+        fullDescription: item.full_description,
+      })) || [];
+      
+      setProducts(mappedProducts);
     } catch (err: any) {
       console.error('Error fetching products:', err);
       setError(err.message || 'Failed to fetch products');
@@ -55,16 +98,34 @@ export const useAdminProducts = () => {
 
   const addProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Transform from our interface format to database format
+      const dbFormatData = {
+        name: productData.name,
+        description: productData.description,
+        full_description: productData.fullDescription,
+        price: productData.price,
+        category: productData.category,
+        image_url: productData.image_url,
+        additional_images: productData.additional_images,
+        in_stock: productData.in_stock,
+      };
+
       const { data, error } = await supabase
         .from('products')
-        .insert(productData)
+        .insert(dbFormatData)
         .select()
         .single();
 
       if (error) throw error;
       
-      setProducts(prev => [...prev, data]);
-      return data;
+      // Map to our interface format
+      const newProduct: Product = {
+        ...data,
+        fullDescription: data.full_description,
+      };
+      
+      setProducts(prev => [...prev, newProduct]);
+      return newProduct;
     } catch (err: any) {
       console.error('Error adding product:', err);
       throw err;
@@ -73,6 +134,7 @@ export const useAdminProducts = () => {
 
   const updateProduct = async (productData: Product) => {
     try {
+      // Transform from our interface format to database format
       const { error } = await supabase
         .from('products')
         .update({
@@ -132,6 +194,7 @@ export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -143,7 +206,23 @@ export const useProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Map database fields to match our Product interface
+      const mappedProducts = data?.map(item => ({
+        ...item,
+        fullDescription: item.full_description,
+      })) || [];
+      
+      setProducts(mappedProducts);
+      
+      // Extract unique categories
+      const uniqueCategories = [...new Set(
+        mappedProducts
+          .map(p => p.category)
+          .filter(Boolean) as string[]
+      )];
+      
+      setCategories(uniqueCategories);
     } catch (err: any) {
       console.error('Error fetching products:', err);
       setError(err.message || 'Failed to fetch products');
@@ -158,6 +237,7 @@ export const useProducts = () => {
 
   return {
     products,
+    categories,
     loading,
     error
   };
@@ -178,7 +258,18 @@ export const useProduct = (id: string | undefined) => {
         .single();
 
       if (error) throw error;
-      setProduct(data || null);
+      
+      if (data) {
+        // Map database fields to match our Product interface
+        const mappedProduct: Product = {
+          ...data,
+          fullDescription: data.full_description,
+        };
+        
+        setProduct(mappedProduct);
+      } else {
+        setProduct(null);
+      }
     } catch (err: any) {
       console.error('Error fetching product:', err);
       setError(err.message || 'Failed to fetch product');
@@ -200,6 +291,32 @@ export const useProduct = (id: string | undefined) => {
   };
 };
 
+// Helper function for getting a product by ID
+export const getProductById = async (id: string): Promise<Product | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    
+    if (data) {
+      // Map database fields to match our Product interface
+      return {
+        ...data,
+        fullDescription: data.full_description,
+      };
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('Error fetching product by ID:', err);
+    return null;
+  }
+};
+
 export const useGallery = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -217,7 +334,8 @@ export const useGallery = () => {
       const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setItems(data || []);
+      
+      setItems(data as GalleryItem[] || []);
       setError(null);
     } catch (err: any) {
       console.error('Error fetching gallery items:', err);
@@ -231,7 +349,7 @@ export const useGallery = () => {
     fetchGalleryItems();
   }, []);
 
-  const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at' | 'project_id'> & { project_id?: string }) => {
+  const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('gallery')
@@ -241,8 +359,8 @@ export const useGallery = () => {
 
       if (error) throw error;
       
-      setItems(prev => [data, ...prev]);
-      return data;
+      setItems(prev => [data as GalleryItem, ...prev]);
+      return data as GalleryItem;
     } catch (err: any) {
       console.error('Error adding gallery item:', err);
       throw err;
@@ -273,5 +391,127 @@ export const useGallery = () => {
     fetchGalleryItems,
     addGalleryItem,
     deleteGalleryItem
+  };
+};
+
+export const useQuoteRequest = () => {
+  const submitQuoteRequest = async (
+    productId: string,
+    quantity: number,
+    contactInfo: {
+      name: string;
+      email: string;
+      phone: string;
+      company: string;
+      message: string;
+    }
+  ) => {
+    try {
+      const quoteRequest: QuoteRequest = {
+        product_id: productId,
+        quantity,
+        name: contactInfo.name,
+        email: contactInfo.email,
+        phone: contactInfo.phone,
+        company: contactInfo.company,
+        message: contactInfo.message
+      };
+
+      const { data, error } = await supabase
+        .from('quote_requests')
+        .insert(quoteRequest)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (err: any) {
+      console.error("Error submitting quote request:", err);
+      throw new Error(err.message || "Failed to submit quote request");
+    }
+  };
+
+  return {
+    submitQuoteRequest
+  };
+};
+
+// Add these hooks to handle admin operations for orders and customers
+export const useAdminOrders = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (err: any) {
+      console.error('Error fetching orders:', err);
+      setError(err.message || 'Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock implementation for now
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    console.log(`Updating order ${orderId} to status ${status}`);
+    return true;
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  return {
+    orders,
+    loading,
+    error,
+    fetchOrders,
+    updateOrderStatus
+  };
+};
+
+export const useAdminCustomers = () => {
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Mock implementation
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (err: any) {
+      console.error('Error fetching customers:', err);
+      setError(err.message || 'Failed to fetch customers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  return {
+    customers,
+    loading,
+    error,
+    fetchCustomers
   };
 };

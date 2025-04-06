@@ -47,8 +47,8 @@ export const useProjects = () => {
 
       if (error) throw error;
       
-      setProjects(prev => [...prev, data]);
-      return data;
+      setProjects(prev => [...prev, data as Project]);
+      return data as Project;
     } catch (err: any) {
       console.error('Error adding project:', err);
       throw err;
