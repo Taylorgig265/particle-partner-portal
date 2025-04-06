@@ -24,7 +24,7 @@ const categoryImages: Record<string, string> = {
 };
 
 const ProductsPreview = () => {
-  const { categories, loading, error } = useProducts();
+  const { products, loading, error } = useProducts();
   const { toast } = useToast();
   
   useEffect(() => {
@@ -37,8 +37,31 @@ const ProductsPreview = () => {
     }
   }, [error, toast]);
 
+  // Group products by category
+  const productsByCategory = products.reduce((acc, product) => {
+    if (!product.category) return acc;
+    
+    if (!acc[product.category]) {
+      acc[product.category] = {
+        name: product.category,
+        products: []
+      };
+    }
+    
+    acc[product.category].products.push(product);
+    return acc;
+  }, {} as Record<string, { name: string, products: any[] }>);
+  
+  // Convert to array for easier rendering
+  const categories = Object.values(productsByCategory);
+
   // Get a representative image for each category
-  const getCategoryImage = (categoryName: string, products: any[]) => {
+  const getCategoryImage = (categoryName: string, products: any[] = []) => {
+    // Check if products array exists and has items
+    if (!products || products.length === 0) {
+      return categoryImages[categoryName] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+    }
+    
     // Try to find a product with an image
     const productWithImage = products.find(p => p.image_url);
     if (productWithImage) return productWithImage.image_url;
@@ -122,14 +145,14 @@ const ProductsPreview = () => {
           >
             {displayCategories.map((category, index) => (
               <motion.div
-                key={category.id}
+                key={category.name}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Link 
-                  to={`/products#${category.id}`}
+                  to={`/products#${category.name}`}
                   className="block h-full"
                 >
                   <div className="h-full rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 card-hover group">
@@ -148,7 +171,11 @@ const ProductsPreview = () => {
                       <h3 className="absolute bottom-4 left-4 text-xl font-semibold text-white">{category.name}</h3>
                     </div>
                     <div className="p-6">
-                      <p className="text-gray-600 mb-4">{category.description}</p>
+                      <p className="text-gray-600 mb-4">
+                        {category.products && category.products.length > 0
+                          ? `${category.products.length} products available`
+                          : "Explore our offerings in this category"}
+                      </p>
                       <div className="flex items-center text-particle-navy font-medium group-hover:text-particle-accent transition-colors">
                         Explore {category.name}
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

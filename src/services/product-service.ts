@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -193,7 +194,7 @@ export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -214,14 +215,23 @@ export const useProducts = () => {
       
       setProducts(mappedProducts);
       
-      // Extract unique categories
-      const uniqueCategories = [...new Set(
-        mappedProducts
-          .map(p => p.category)
-          .filter(Boolean) as string[]
-      )];
+      // Group products by category
+      const categoryMap: Record<string, any> = {};
       
-      setCategories(uniqueCategories);
+      mappedProducts.forEach(product => {
+        if (product.category) {
+          if (!categoryMap[product.category]) {
+            categoryMap[product.category] = {
+              name: product.category,
+              products: []
+            };
+          }
+          categoryMap[product.category].products.push(product);
+        }
+      });
+      
+      // Convert to array
+      setCategories(Object.values(categoryMap));
     } catch (err: any) {
       console.error('Error fetching products:', err);
       setError(err.message || 'Failed to fetch products');
@@ -417,7 +427,6 @@ export const useQuoteRequest = () => {
       };
 
       // For the Supabase database schema, we need to ensure we're using the correct table
-      // This appears to be "quote_requests" based on the error message
       const { data, error } = await supabase
         .from('quote_requests')
         .insert(quoteRequest)

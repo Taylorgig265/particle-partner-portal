@@ -1,318 +1,99 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Loader2, Truck, RotateCcw, Shield, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useProduct } from '@/services/product-service';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import Navbar from '@/components/ui/navbar';
-import Footer from '@/components/ui/footer';
-import { Product, getProductById } from '@/services/product-service';
-import QuoteRequestForm from '@/components/QuoteRequestForm';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { formatCurrency } from '@/lib/utils';
+import QuoteRequestDialog from '@/components/QuoteRequestDialog';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const { product, loading, error } = useProduct(id);
   const { toast } = useToast();
-
+  
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        
-        if (!id) {
-          throw new Error("Product ID is missing");
-        }
-        
-        const productData = await getProductById(id);
-        
-        if (productData) {
-          setProduct(productData);
-        } else {
-          throw new Error("Product not found");
-        }
-      } catch (err: any) {
-        console.error("Error fetching product:", err);
-        setError(err.message);
-        toast({
-          title: "Error loading product",
-          description: err.message,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProduct();
-  }, [id, toast]);
+  }, []);
 
-  // Get all product images (main + additional)
-  const getAllProductImages = () => {
-    if (!product) return [];
-    
-    const mainImage = product.image_url || product.imageUrl || 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-    return [mainImage, ...(product.additional_images || [])];
-  };
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading product",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-12 w-12 text-particle-navy animate-spin mb-4" />
-            <p className="text-lg text-gray-600">Loading product details...</p>
-          </div>
-        </div>
-        <Footer />
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-12 w-12 text-particle-navy animate-spin" />
       </div>
     );
   }
 
-  if (error || !product) {
+  if (!product) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-500 mb-4">Product Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || "The requested product could not be found."}</p>
-            <Button asChild>
-              <Link to="/products">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
-              </Link>
-            </Button>
-          </div>
-        </div>
-        <Footer />
+      <div className="flex flex-col justify-center items-center h-screen">
+        <h2 className="text-2xl font-bold text-particle-navy mb-4">Product Not Found</h2>
+        <p className="text-gray-600">The requested product could not be found.</p>
+        <Button asChild variant="outline" className="mt-4">
+          <Link to="/products">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Products
+          </Link>
+        </Button>
       </div>
     );
   }
-
-  const allImages = getAllProductImages();
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
-        className="min-h-screen flex flex-col"
-      >
-        <Navbar />
-        <main className="flex-1 py-16">
-          <div className="content-container">
-            <div className="mb-8">
-              <Button variant="outline" asChild>
-                <Link to="/products">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Products
-                </Link>
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Product image carousel section */}
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="space-y-6"
-              >
-                <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
-                  <Carousel className="w-full">
-                    <CarouselContent>
-                      {allImages.map((image, index) => (
-                        <CarouselItem key={index}>
-                          <div className="p-1">
-                            <div className="overflow-hidden">
-                              <img 
-                                src={image} 
-                                alt={`${product?.name} - view ${index + 1}`}
-                                className="w-full h-[400px] object-cover object-center"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="-left-4 bg-white" />
-                    <CarouselNext className="-right-4 bg-white" />
-                  </Carousel>
-                </div>
-                
-                {/* Thumbnail gallery */}
-                <div className="grid grid-cols-4 gap-2">
-                  {allImages.slice(0, 4).map((image, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`
-                        cursor-pointer border-2 rounded-lg overflow-hidden
-                        ${selectedImageIndex === index ? 'border-particle-navy' : 'border-transparent'}
-                      `}
-                    >
-                      <img 
-                        src={image}
-                        alt={`${product?.name} thumbnail ${index + 1}`}
-                        className="w-full h-20 object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-              
-              {/* Product info section */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="space-y-6"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-1 bg-particle-navy/10 text-particle-navy text-xs rounded-full font-medium">
-                      {product?.category || "Uncategorized"}
-                    </span>
-                    
-                    {product?.in_stock ? (
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                        Available
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
-                        Currently Unavailable
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h1 className="text-3xl md:text-4xl font-bold text-particle-navy mb-4">{product?.name}</h1>
-                  <p className="text-gray-600 mb-6">{product?.description}</p>
-                  
-                  <div className="text-3xl font-bold text-particle-accent mb-8">
-                    {formatCurrency(product?.price || 0)}
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                    <Dialog open={isQuoteDialogOpen} onOpenChange={setIsQuoteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="bg-particle-navy hover:bg-particle-accent/90 text-white btn-animation flex-1" size="lg">
-                          <FileText className="mr-2 h-5 w-5" />
-                          Request Quote
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader>
-                          <DialogTitle>Request a Quote</DialogTitle>
-                          <DialogDescription>
-                            Fill out the form below and we'll contact you with pricing and availability for {product?.name}.
-                          </DialogDescription>
-                        </DialogHeader>
-                        {product && (
-                          <QuoteRequestForm 
-                            productId={product.id} 
-                            productName={product.name} 
-                            onSuccess={() => setIsQuoteDialogOpen(false)} 
-                          />
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                    <div className="p-2 bg-particle-navy/10 rounded-full">
-                      <Truck className="h-5 w-5 text-particle-navy" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Delivery Options</p>
-                      <p className="text-sm text-gray-500">Available upon request</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                    <div className="p-2 bg-particle-navy/10 rounded-full">
-                      <RotateCcw className="h-5 w-5 text-particle-navy" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Custom Options</p>
-                      <p className="text-sm text-gray-500">Specifications available</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200">
-                    <div className="p-2 bg-particle-navy/10 rounded-full">
-                      <Shield className="h-5 w-5 text-particle-navy" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Warranty</p>
-                      <p className="text-sm text-gray-500">1-year manufacturer warranty</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-            
-            {/* Product full description section */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-16"
-            >
-              <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
-                <h2 className="text-2xl font-bold text-particle-navy mb-6">Product Details</h2>
-                
-                {product?.fullDescription || product?.full_description ? (
-                  <div 
-                    className="prose max-w-none text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: product.fullDescription || product.full_description || '' }}
-                  />
-                ) : (
-                  <p className="text-gray-600">{product?.description}</p>
-                )}
-              </div>
-            </motion.div>
+    <div className="container py-24">
+      <Button asChild variant="ghost" className="mb-8">
+        <Link to="/products">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Products
+        </Link>
+      </Button>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <img 
+            src={product.image_url} 
+            alt={product.name} 
+            className="w-full rounded-xl shadow-md" 
+          />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-particle-navy mb-4">{product.name}</h1>
+          <p className="text-gray-600 mb-6">{product.description}</p>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-2xl font-semibold text-particle-navy">
+              ${product.price.toLocaleString('en-US', {minimumFractionDigits: 2})}
+            </span>
+            <QuoteRequestDialog 
+              productId={product.id} 
+              productName={product.name}
+              trigger={
+                <Button variant="outline">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Request a Quote
+                </Button>
+              }
+            />
           </div>
-        </main>
-        <Footer />
-      </motion.div>
-    </AnimatePresence>
+          {product.fullDescription ? (
+            <div className="mt-8 prose prose-blue max-w-none" 
+                 dangerouslySetInnerHTML={{ __html: product.fullDescription }} />
+          ) : (
+            <div className="mt-8">
+              <p className="text-gray-700">{product.description}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
