@@ -9,7 +9,7 @@ import {
   BarChart,
   RefreshCw,
   LogOut,
-  Image
+  ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,8 +45,19 @@ const Admin = () => {
   }, [activeTab, refreshKey]);
   
   const fetchVisitorStats = async () => {
-    const stats = await getVisitorStats();
-    setVisitorStats(stats);
+    try {
+      console.log('Fetching visitor statistics...');
+      const stats = await getVisitorStats();
+      console.log('Visitor stats received:', stats);
+      setVisitorStats(stats);
+    } catch (error) {
+      console.error('Error fetching visitor stats:', error);
+      toast({
+        title: "Error loading statistics",
+        description: "Could not load visitor statistics. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleRefresh = async () => {
@@ -115,7 +126,7 @@ const Admin = () => {
               <span>Customers</span>
             </TabsTrigger>
             <TabsTrigger value="gallery" className="flex items-center space-x-2">
-              <Image size={18} />
+              <ImageIcon size={18} />
               <span>Gallery</span>
             </TabsTrigger>
             <TabsTrigger value="statistics" className="flex items-center space-x-2">

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useGallery } from '@/services/product-service';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image, Loader2 } from 'lucide-react';
+import { ImageIcon, Loader2 } from 'lucide-react';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
 
@@ -64,7 +64,7 @@ const Gallery = () => {
               </div>
             ) : items.length === 0 ? (
               <div className="text-center py-20 bg-gray-50 rounded-lg">
-                <Image className="mx-auto h-16 w-16 text-gray-400" />
+                <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
                 <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items yet</h3>
                 <p className="mt-2 text-gray-500">Check back soon for updates to our project gallery.</p>
               </div>

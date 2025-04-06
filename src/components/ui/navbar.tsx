@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Home, X, Menu, FileText, Settings } from "lucide-react";
+import { Home, X, Menu, FileText, Settings, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -26,6 +26,7 @@ const Navbar = () => {
   const navItems: NavItem[] = [
     { title: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
     { title: "Products", href: "/products" },
+    { title: "Gallery", href: "/gallery", icon: <Image className="h-5 w-5" /> },
     { title: "About", href: "/about" },
     { title: "Contact", href: "/contact" },
     { title: "Admin", href: "/admin", icon: <Settings className="h-5 w-5" /> },
