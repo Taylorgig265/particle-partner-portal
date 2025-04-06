@@ -59,6 +59,7 @@ export interface QuoteItem {
   product_id: string;
   product_name?: string;
   quantity: number;
+  price_at_purchase?: number;
   contact_info: {
     name: string;
     email: string;
@@ -67,6 +68,7 @@ export interface QuoteItem {
     message: string;
   };
   status: string;
+  product?: Product;
 }
 
 export const getProducts = async (): Promise<Product[]> => {
@@ -113,20 +115,20 @@ export const useAdminProducts = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getProducts();
-        setProducts(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -141,6 +143,9 @@ export const useAdminProducts = () => {
         console.error('Error adding product:', error);
         throw error;
       }
+      
+      // Refresh products after adding
+      await fetchProducts();
     } catch (error: any) {
       console.error('Error in addProduct:', error);
       throw new Error(error.message || "Could not add product");
@@ -158,6 +163,9 @@ export const useAdminProducts = () => {
         console.error('Error updating product:', error);
         return false;
       }
+      
+      // Refresh products after updating
+      await fetchProducts();
       return true;
     } catch (error: any) {
       console.error('Error in updateProduct:', error);
@@ -176,6 +184,9 @@ export const useAdminProducts = () => {
         console.error('Error deleting product:', error);
         return false;
       }
+      
+      // Refresh products after deleting
+      await fetchProducts();
       return true;
     } catch (error: any) {
       console.error('Error in deleteProduct:', error);
@@ -187,6 +198,7 @@ export const useAdminProducts = () => {
     products,
     loading,
     error,
+    fetchProducts,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -298,8 +310,8 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // Use proper typing for the RPC call
-      const { data, error } = await supabase.rpc<any>(
+      // Type the function call correctly with proper generic type
+      const { data, error } = await supabase.rpc<{ success: boolean }>(
         'submit_quote_request', 
         quoteRequest
       );
@@ -316,7 +328,7 @@ export const useQuoteRequest = () => {
   return { submitQuoteRequest };
 };
 
-// Mock implementation for useGallery to be replaced with actual implementation
+// Implementation for useGallery with required functions
 export const useGallery = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -343,6 +355,44 @@ export const useGallery = () => {
     }
   };
 
+  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'created_at'>) => {
+    setLoading(true);
+    try {
+      const { data, error: insertError } = await supabase
+        .from('gallery')
+        .insert([{ ...item, id: uuidv4() }])
+        .select();
+      
+      if (insertError) throw new Error(insertError.message);
+      await fetchGalleryItems(item.project_id);
+      return data?.[0];
+    } catch (err: any) {
+      setError(err.message || 'Failed to add gallery item');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteGalleryItem = async (id: string) => {
+    setLoading(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from('gallery')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) throw new Error(deleteError.message);
+      await fetchGalleryItems();
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete gallery item');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchGalleryItems();
   }, []);
@@ -351,26 +401,85 @@ export const useGallery = () => {
     items,
     loading,
     error,
-    fetchGalleryItems
+    fetchGalleryItems,
+    addGalleryItem,
+    deleteGalleryItem
   };
 };
 
-// Mock implementation for useAdminOrders to be replaced with actual implementation
+// Implementation for useAdminOrders with required functions
 export const useAdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [quotes, setQuotes] = useState<QuoteItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for orders
-  useEffect(() => {
+  const fetchOrders = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setOrders([]);
-      setQuotes([]);
+    try {
+      // Fetch orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) throw new Error(ordersError.message);
+      setOrders(ordersData || []);
+      
+      // Fetch quotes
+      const { data: quotesData, error: quotesError } = await supabase
+        .from('quotes')
+        .select('*, products:product_id(*)');
+      
+      if (quotesError) throw new Error(quotesError.message);
+      
+      // Process quotes data to match our QuoteItem interface
+      const processedQuotes: QuoteItem[] = (quotesData || []).map((quote: any) => ({
+        id: quote.id,
+        created_at: quote.created_at,
+        product_id: quote.product_id,
+        product_name: quote.products?.name,
+        quantity: quote.quantity,
+        price_at_purchase: quote.products?.price,
+        contact_info: {
+          name: quote.name,
+          email: quote.email,
+          phone: quote.phone,
+          company: quote.company,
+          message: quote.message
+        },
+        status: quote.status || 'pending',
+        product: quote.products
+      }));
+      
+      setQuotes(processedQuotes);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load orders and quotes');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId);
+      
+      if (error) throw new Error(error.message);
+      
+      // Refresh orders after update
+      await fetchOrders();
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to update order status');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
   }, []);
 
   return {
@@ -378,28 +487,41 @@ export const useAdminOrders = () => {
     quotes,
     loading,
     error,
+    fetchOrders,
+    updateOrderStatus
   };
 };
 
-// Mock implementation for useAdminCustomers to be replaced with actual implementation
+// Implementation for useAdminCustomers with required functions
 export const useAdminCustomers = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for customers
-  useEffect(() => {
+  const fetchCustomers = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setCustomers([]);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (fetchError) throw new Error(fetchError.message);
+      setCustomers(data || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load customers');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
   }, []);
 
   return {
     customers,
     loading,
     error,
+    fetchCustomers
   };
 };
