@@ -32,13 +32,13 @@ const AdminStatistics: React.FC<AdminStatisticsProps> = ({ visitorStats }) => {
 
   // Fix the average order value calculation to properly handle numbers
   const averageOrderValue = orders && orders.length > 0 
-    ? (orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0) / orders.length).toFixed(2)
+    ? (orders.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0) / orders.length).toFixed(2)
     : '0.00';
 
   useEffect(() => {
     if (orders && orders.length > 0) {
       // Calculate total revenue and orders
-      const revenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      const revenue = orders.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0);
       setTotalRevenue(revenue);
       setTotalOrders(orders.length);
       
@@ -66,7 +66,7 @@ const AdminStatistics: React.FC<AdminStatisticsProps> = ({ visitorStats }) => {
           }
           
           monthlyData[monthYear].orders += 1;
-          monthlyData[monthYear].revenue += Number(order.total) || 0;
+          monthlyData[monthYear].revenue += Number(order.total_amount) || 0;
         }
       });
       

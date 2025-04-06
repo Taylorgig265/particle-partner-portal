@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -417,6 +416,8 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
+      // For the Supabase database schema, we need to ensure we're using the correct table
+      // This appears to be "quote_requests" based on the error message
       const { data, error } = await supabase
         .from('quote_requests')
         .insert(quoteRequest)
@@ -468,7 +469,7 @@ export const useAdminOrders = () => {
     }
   };
 
-  // Mock implementation for now
+  // Implementation for updating order status
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     console.log(`Updating order ${orderId} to status ${status}`);
     
@@ -500,7 +501,7 @@ export const useAdminCustomers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock implementation
+  // Implementation for fetching customers
   const fetchCustomers = async () => {
     try {
       setLoading(true);

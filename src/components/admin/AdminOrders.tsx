@@ -220,10 +220,12 @@ const AdminOrders = () => {
                           <SelectItem value="processing">Processing</SelectItem>
                           <SelectItem value="shipped">Shipped</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                           <SelectItem value="quote_requested">Quote Requested</SelectItem>
                           <SelectItem value="quote_sent">Quote Sent</SelectItem>
                           <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
