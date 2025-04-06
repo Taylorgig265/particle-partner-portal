@@ -1,386 +1,102 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 export interface Product {
   id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl?: string; 
-  category: string;
-  in_stock?: boolean;
-  fullDescription?: string;
-  image_url?: string;
-  full_description?: string;
-  updated_at?: string;
-  created_at?: string;
-  additional_images?: string[]; // This field now exists in the database
-}
-
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected' | 'completed';
-
-export interface ContactDetails {
-  name?: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  message?: string;
-  product_id?: string;
-  quantity?: number;
-}
-
-export interface Order {
-  id: string;
-  customer?: string;
-  date?: string;
-  status: OrderStatus;
-  total?: number;
-  items?: number;
-  created_at?: string;
-  total_amount?: number;
-  contact_details?: Json | null;
-  shipping_address?: Json | null;
-  user_id?: string;
-  updated_at?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description: string;
-  products: Product[];
-}
-
-export interface QuoteRequest {
-  id: string;
-  product_id: string;
-  quantity: number;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  company: string;
-  message: string;
   created_at: string;
-  status: 'pending' | 'contacted' | 'quoted' | 'completed' | 'canceled';
-  contact_details?: any;
-  total_amount?: number;
-}
-
-export interface QuoteItem {
-  id: string;
-  product_name: string;
-  quantity: number;
-  price_quoted?: number;
-  product?: any;
-  price_at_purchase?: number;
-}
-
-export interface Customer {
-  id: string;
+  updated_at: string;
   name: string;
-  email: string;
-  phone: string;
-  company: string;
-  orders_count: number;
-  total_spent: number;
-  last_order_date: string;
-  created_at?: string;
-  avatar_url?: string;
+  description: string | null;
+  fullDescription: string | null;
+  price: number;
+  category: string | null;
+  image_url: string | null;
+  imageUrl?: string; //Legacy support
+  additional_images: string[] | null;
+  in_stock: boolean | null;
 }
 
-// Helper function to safely extract values from Json type
-export const getJsonValue = (json: Json | null, key: string): any => {
-  if (!json) return null;
-  
-  if (typeof json === 'object' && json !== null && key in json) {
-    return (json as Record<string, any>)[key];
-  }
-  
-  return null;
-};
-
-export const getProducts = async (): Promise<Product[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*');
-    
-    if (error) {
-      console.error('Error fetching products from Supabase:', error);
-      return []; // Return empty array instead of mock data
-    }
-    
-    return data.map((product: any) => ({
-      ...product,
-      imageUrl: product.image_url,
-      fullDescription: product.full_description,
-      additional_images: product.additional_images || [] // Now coming from database
-    }));
-  } catch (err) {
-    console.error('Unexpected error fetching products:', err);
-    return []; // Return empty array instead of mock data
-  }
-};
-
-export const getProductById = async (id: string): Promise<Product | undefined> => {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching product from Supabase:', error);
-      return undefined;
-    }
-    
-    return {
-      ...data,
-      imageUrl: data.image_url,
-      fullDescription: data.full_description,
-      additional_images: data.additional_images || [] // Now coming from database
-    };
-  } catch (err) {
-    console.error('Unexpected error fetching product by ID:', err);
-    return undefined;
-  }
-};
-
-export const getOrders = async (): Promise<Order[]> => {
-  try {
-    console.log('Fetching orders from Supabase...');
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching orders from Supabase:', error);
-      return []; 
-    }
-    
-    if (!data || data.length === 0) {
-      console.log('No orders found in Supabase');
-      return []; 
-    }
-    
-    console.log('Orders fetched from Supabase:', data.length);
-    
-    return data.map((order: any) => {
-      const contactDetails = order.contact_details;
-      const orderStatus = order.status as OrderStatus;
-      
-      return {
-        ...order,
-        status: orderStatus,
-        customer: contactDetails && typeof contactDetails === 'object' ? getJsonValue(contactDetails, 'name') || "Unknown" : "Unknown",
-        date: order.created_at,
-        total: order.total_amount
-      };
-    });
-  } catch (err) {
-    console.error('Unexpected error fetching orders:', err);
-    return []; 
-  }
-};
-
-export const getOrderById = async (id: string): Promise<Order | undefined> => {
-  try {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching order from Supabase:', error);
-      return undefined;
-    }
-    
-    // Ensure that status is cast to OrderStatus
-    const orderStatus = data.status as OrderStatus;
-    const contactDetails = data.contact_details;
-    
-    return {
-      ...data,
-      status: orderStatus,
-      customer: contactDetails && typeof contactDetails === 'object' ? getJsonValue(contactDetails, 'name') || "Unknown" : "Unknown",
-      date: data.created_at,
-      total: data.total_amount
-    };
-  } catch (err) {
-    console.error('Unexpected error fetching order by ID:', err);
-    return undefined;
-  }
-};
-
-// Hook for product categories for product display
-export const useProducts = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const products = await getProducts();
-        
-        if (products.length === 0) {
-          setError('No products found.');
-          setCategories([]);
-          return;
-        }
-        
-        // Group products by category
-        const categoryMap = products.reduce((acc, product) => {
-          const categoryName = product.category || 'Uncategorized';
-          
-          if (!acc[categoryName]) {
-            acc[categoryName] = {
-              id: categoryName.toLowerCase().replace(/\s+/g, '-'),
-              name: categoryName,
-              description: `High-quality ${categoryName} equipment for medical facilities.`,
-              products: []
-            };
-          }
-          
-          acc[categoryName].products.push(product);
-          return acc;
-        }, {} as Record<string, Category>);
-        
-        setCategories(Object.values(categoryMap));
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Failed to load products. Please try again.');
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProducts();
-  }, []);
-
-  return { categories, loading, error };
-};
-
-// Hook for quote requests
-export const useQuoteRequest = () => {
-  const submitQuoteRequest = async (
-    productId: string, 
-    quantity: number,
-    customerInfo: {
-      name: string;
-      email: string;
-      phone: string;
-      company: string;
-      message: string;
-    }
-  ) => {
-    try {
-      console.log('Submitting quote request with values:', {
-        productId,
-        quantity,
-        customerInfo
-      });
-      
-      // Get the product to calculate estimated total
-      const product = await getProductById(productId);
-      const estimatedTotal = product ? product.price * quantity : 0;
-      
-      // Create a new order with the quote request information
-      // Setting user_id explicitly to null since it's now nullable
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([{
-          status: 'quote_requested',
-          total_amount: estimatedTotal,
-          user_id: null,
-          contact_details: {
-            name: customerInfo.name,
-            email: customerInfo.email,
-            phone: customerInfo.phone,
-            company: customerInfo.company,
-            message: customerInfo.message,
-            product_id: productId,
-            quantity: quantity
-          }
-        }])
-        .select();
-
-      if (error) {
-        console.error('Error submitting quote request to Supabase:', error);
-        throw new Error(`Failed to submit quote request: ${error.message}`);
-      }
-      
-      console.log('Quote request submitted successfully:', data);
-      return data;
-    } catch (err) {
-      console.error('Unexpected error submitting quote request:', err);
-      throw err; // Rethrow to handle in the component
-    }
-  };
-
-  return { submitQuoteRequest };
-};
+export interface GalleryItem {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  description: string | null;
+  image_url: string;
+  project_id: string | null;
+}
 
 export const useAdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (err: any) {
+      console.error('Error fetching products:', err);
+      setError(err.message || 'Failed to fetch products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await getProducts();
-        setProducts(data);
-        setError(data.length === 0 ? 'No products found in the database.' : null);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Failed to load products. Please try again.');
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchProducts();
   }, []);
 
-  const updateProduct = async (product: Product) => {
+  const addProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .update({
-          name: product.name,
-          description: product.description,
-          full_description: product.fullDescription,
-          price: product.price,
-          category: product.category,
-          image_url: product.image_url || product.imageUrl,
-          in_stock: product.in_stock,
-          additional_images: product.additional_images || [] // Support for updating additional images
-        })
-        .eq('id', product.id)
-        .select();
+        .insert(productData)
+        .select()
+        .single();
 
-      if (error) {
-        console.error('Error updating product in Supabase:', error);
-        return false;
-      }
+      if (error) throw error;
       
-      // Update local state
-      setProducts(prevProducts => 
-        prevProducts.map(p => p.id === product.id ? { ...product, updated_at: new Date().toISOString() } : p)
+      setProducts(prev => [...prev, data]);
+      return data;
+    } catch (err: any) {
+      console.error('Error adding product:', err);
+      throw err;
+    }
+  };
+
+  const updateProduct = async (productData: Product) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          name: productData.name,
+          description: productData.description,
+          full_description: productData.fullDescription,
+          price: productData.price,
+          category: productData.category,
+          image_url: productData.image_url,
+          additional_images: productData.additional_images,
+          in_stock: productData.in_stock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productData.id);
+
+      if (error) throw error;
+      
+      setProducts(prev => 
+        prev.map(p => p.id === productData.id ? {...p, ...productData} : p)
       );
+      
       return true;
-    } catch (err) {
-      console.error('Unexpected error updating product:', err);
+    } catch (err: any) {
+      console.error('Error updating product:', err);
       return false;
     }
   };
@@ -392,54 +108,13 @@ export const useAdminProducts = () => {
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting product from Supabase:', error);
-        return false;
-      }
+      if (error) throw error;
       
-      // Update local state
-      setProducts(prevProducts => prevProducts.filter(product => product.id !== id));
+      setProducts(prev => prev.filter(product => product.id !== id));
       return true;
-    } catch (err) {
-      console.error('Unexpected error deleting product:', err);
+    } catch (err: any) {
+      console.error('Error deleting product:', err);
       return false;
-    }
-  };
-
-  const addProduct = async (product: Omit<Product, 'id'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .insert([{
-          name: product.name,
-          description: product.description,
-          full_description: product.fullDescription,
-          price: product.price,
-          category: product.category,
-          image_url: product.image_url || product.imageUrl,
-          in_stock: product.in_stock || true,
-          additional_images: product.additional_images || []
-        }])
-        .select();
-
-      if (error) {
-        console.error('Error adding product to Supabase:', error);
-        return null;
-      }
-      
-      const newProduct = {
-        ...product,
-        id: data[0].id,
-        created_at: data[0].created_at,
-        updated_at: data[0].updated_at
-      };
-      
-      // Update local state
-      setProducts(prevProducts => [...prevProducts, newProduct]);
-      return newProduct;
-    } catch (err) {
-      console.error('Unexpected error adding product:', err);
-      return null;
     }
   };
 
@@ -447,316 +122,130 @@ export const useAdminProducts = () => {
     products,
     loading,
     error,
+    addProduct,
     updateProduct,
-    deleteProduct,
-    addProduct
+    deleteProduct
   };
 };
 
-export const useAdminOrders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+export const useProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
+  const fetchProducts = async () => {
     try {
       setLoading(true);
-      console.log('Admin: Fetching orders from Supabase...');
-      const data = await getOrders();
-      console.log('Admin: Orders fetched:', data.length);
-      setOrders(data);
-      setError(data.length === 0 ? 'No orders found in the database.' : null);
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError('Failed to load orders. Please try again.');
-      setOrders([]);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('in_stock', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (err: any) {
+      console.error('Error fetching products:', err);
+      setError(err.message || 'Failed to fetch products');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchProducts();
   }, []);
 
-  const updateOrderStatus = async (id: string, status: OrderStatus) => {
-    try {
-      console.log(`Updating order ${id} status to ${status}`);
-      const { error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error updating order status in Supabase:', error);
-        return false;
-      }
-      
-      // Update local state
-      setOrders(prevOrders => 
-        prevOrders.map(order => order.id === id ? { ...order, status } : order)
-      );
-      console.log('Order status updated successfully');
-      return true;
-    } catch (err) {
-      console.error('Unexpected error updating order status:', err);
-      return false;
-    }
+  return {
+    products,
+    loading,
+    error
   };
-  
-  const fetchOrderDetails = async (id: string) => {
+};
+
+export const useProduct = (id: string | undefined) => {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProduct = async (id: string) => {
     try {
-      console.log(`Fetching details for order ${id}`);
-      // Get the order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (orderError) {
-        console.error('Error fetching order details from Supabase:', orderError);
-        return { 
-          order: undefined, 
-          items: [] 
-        };
-      }
-
-      console.log('Order details fetched:', order);
-      const contactDetails = order.contact_details;
-      
-      // For the demo, generate order items based on contact_details
-      const items: QuoteItem[] = [];
-      
-      if (contactDetails && typeof contactDetails === 'object') {
-        const productId = getJsonValue(contactDetails, 'product_id');
-        const quantity = getJsonValue(contactDetails, 'quantity');
-        
-        if (productId && quantity) {
-          // Try to get the product details
-          const product = await getProductById(productId);
-          
-          items.push({
-            id: '1',
-            product_name: product?.name || 'Product from contact details',
-            quantity: Number(quantity),
-            price_at_purchase: product?.price || (order.total_amount / Number(quantity)),
-            product: {
-              name: product?.name || 'Product from contact details',
-              image_url: product?.image_url || '/placeholder.svg'
-            }
-          });
-        }
-      } else {
-        // Fallback item if no details found
-        items.push({
-          id: '1',
-          product_name: 'Unknown product',
-          quantity: 1,
-          price_at_purchase: order.total_amount,
-          product: {
-            name: 'Unknown product',
-            image_url: '/placeholder.svg'
-          }
-        });
-      }
-
-      return {
-        order,
-        items
-      };
-    } catch (err) {
-      console.error('Unexpected error fetching order details:', err);
-      return { 
-        order: undefined, 
-        items: [] 
-      };
-    }
-  };
-
-  return {
-    orders,
-    loading,
-    error,
-    updateOrderStatus,
-    fetchOrderDetails,
-    fetchOrders // Export the fetchOrders function
-  };
-};
-
-export const useAdminCustomers = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setLoading(true);
-        
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('orders')
-          .select('*');
-          
-        if (ordersError) {
-          throw ordersError;
-        }
-        
-        if (!ordersData || ordersData.length === 0) {
-          setError('No customer data available.');
-          setCustomers([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Extract unique customers from orders
-        const customersMap = new Map<string, Customer>();
-        
-        ordersData.forEach((order: any) => {
-          if (order.contact_details?.email) {
-            const email = order.contact_details.email;
-            
-            if (!customersMap.has(email)) {
-              const avatar_url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`;
-              
-              customersMap.set(email, {
-                id: email, // Using email as ID for now
-                name: order.contact_details.name || "Unknown",
-                email: email,
-                phone: order.contact_details.phone || "Unknown",
-                company: order.contact_details.company || "Unknown",
-                orders_count: 1,
-                total_spent: Number(order.total_amount) || 0,
-                last_order_date: order.created_at,
-                created_at: order.created_at,
-                avatar_url
-              });
-            } else {
-              // Update existing customer
-              const customer = customersMap.get(email)!;
-              customer.orders_count += 1;
-              customer.total_spent += Number(order.total_amount) || 0;
-              
-              // Update last order date if newer
-              if (new Date(order.created_at) > new Date(customer.last_order_date)) {
-                customer.last_order_date = order.created_at;
-              }
-            }
-          }
-        });
-        
-        setCustomers(Array.from(customersMap.values()));
-        setError(customersMap.size === 0 ? 'No customer data available.' : null);
-      } catch (err) {
-        console.error('Error fetching customers:', err);
-        setError('Failed to load customers. Please try again.');
-        setCustomers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCustomers();
-  }, []);
-  
-  const fetchCustomerOrders = async (customerId: string) => {
-    try {
-      // Since we're using email as customer ID
-      const customer = customers.find(c => c.id === customerId);
-      
-      if (customer?.email) {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .filter('contact_details->email', 'eq', customer.email);
-          
-        if (error) {
-          console.error('Error fetching customer orders from Supabase:', error);
-          return [];
-        }
-        
-        return data.map((order: any) => ({
-          ...order,
-          customer: order.contact_details?.name || "Unknown",
-          date: order.created_at,
-          total: order.total_amount
-        }));
-      }
-      
-      return [];
-    } catch (err) {
-      console.error('Unexpected error fetching customer orders:', err);
-      return [];
-    }
-  };
-
-  return {
-    customers,
-    loading,
-    error,
-    fetchCustomerOrders
-  };
-};
-
-// New hook for gallery functionality
-export interface GalleryItem {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Hook for managing gallery items
-export const useGallery = () => {
-  const [items, setItems] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchGalleryItems = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('gallery')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error fetching gallery items:', error);
-        setError('Failed to load gallery. Please try again.');
-        setItems([]);
-        return;
-      }
-      
-      setItems(data || []);
-      setError(null);
-    } catch (err) {
-      console.error('Unexpected error fetching gallery items:', err);
-      setError('An unexpected error occurred. Please try again.');
-      setItems([]);
+      if (error) throw error;
+      setProduct(data || null);
+    } catch (err: any) {
+      console.error('Error fetching product:', err);
+      setError(err.message || 'Failed to fetch product');
     } finally {
       setLoading(false);
     }
   };
 
-  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at'>) => {
+  useEffect(() => {
+    if (id) {
+      fetchProduct(id);
+    }
+  }, [id]);
+
+  return {
+    product,
+    loading,
+    error
+  };
+};
+
+export const useGallery = () => {
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchGalleryItems = async (projectId?: string) => {
+    try {
+      setLoading(true);
+      let query = supabase.from('gallery').select('*');
+      
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+      
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      setItems(data || []);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching gallery items:', err);
+      setError(err.message || 'Failed to fetch gallery items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGalleryItems();
+  }, []);
+
+  const addGalleryItem = async (itemData: Omit<GalleryItem, 'id' | 'created_at' | 'updated_at' | 'project_id'> & { project_id?: string }) => {
     try {
       const { data, error } = await supabase
         .from('gallery')
-        .insert([item])
-        .select();
-        
-      if (error) {
-        console.error('Error adding gallery item:', error);
-        return null;
-      }
+        .insert(itemData)
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      setItems(prev => [data[0], ...prev]);
-      return data[0];
-    } catch (err) {
-      console.error('Unexpected error adding gallery item:', err);
-      return null;
+      setItems(prev => [data, ...prev]);
+      return data;
+    } catch (err: any) {
+      console.error('Error adding gallery item:', err);
+      throw err;
     }
   };
 
@@ -766,23 +255,16 @@ export const useGallery = () => {
         .from('gallery')
         .delete()
         .eq('id', id);
-        
-      if (error) {
-        console.error('Error deleting gallery item:', error);
-        return false;
-      }
+
+      if (error) throw error;
       
       setItems(prev => prev.filter(item => item.id !== id));
       return true;
-    } catch (err) {
-      console.error('Unexpected error deleting gallery item:', err);
+    } catch (err: any) {
+      console.error('Error deleting gallery item:', err);
       return false;
     }
   };
-
-  useEffect(() => {
-    fetchGalleryItems();
-  }, []);
 
   return {
     items,

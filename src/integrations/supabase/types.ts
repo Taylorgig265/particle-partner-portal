@@ -15,6 +15,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string
+          project_id: string | null
           title: string
           updated_at: string
         }
@@ -23,6 +24,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url: string
+          project_id?: string | null
           title: string
           updated_at?: string
         }
@@ -31,10 +33,19 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string
+          project_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gallery_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -184,6 +195,30 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []

@@ -30,9 +30,18 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminProducts = () => {
   const { products, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
@@ -43,8 +52,13 @@ const AdminProducts = () => {
     price: 0,
     category: "",
     image_url: "",
+    additional_images: [] as string[],
     in_stock: true
   });
+  
+  const [additionalImageUrl, setAdditionalImageUrl] = useState("");
+  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -62,6 +76,33 @@ const AdminProducts = () => {
     }
   };
 
+  const handleAdditionalImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdditionalImageUrl(e.target.value);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFiles(e.target.files);
+    }
+  };
+
+  const addAdditionalImage = () => {
+    if (additionalImageUrl) {
+      setFormData({
+        ...formData,
+        additional_images: [...formData.additional_images, additionalImageUrl]
+      });
+      setAdditionalImageUrl("");
+    }
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setFormData({
+      ...formData,
+      additional_images: formData.additional_images.filter((_, i) => i !== index)
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -70,13 +111,91 @@ const AdminProducts = () => {
       price: 0,
       category: "",
       image_url: "",
+      additional_images: [],
       in_stock: true
     });
+    setAdditionalImageUrl("");
+    setImageFiles(null);
   };
 
   const handleAddProduct = async () => {
+    if (!formData.name) {
+      toast({
+        title: "Product name is required",
+        description: "Please enter a name for the product.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      const newProduct = await addProduct(formData);
+      setIsUploading(true);
+      let mainImageUrl = formData.image_url;
+      let additionalImagesUrls = [...formData.additional_images];
+
+      // If files were selected, upload them to Supabase Storage
+      if (imageFiles && imageFiles.length > 0) {
+        // Upload main image first
+        const mainFile = imageFiles[0];
+        const mainFileName = `${Date.now()}-${mainFile.name}`;
+        const mainFilePath = `products/${mainFileName}`;
+        
+        const { data: mainUploadData, error: mainUploadError } = await supabase.storage
+          .from('public')
+          .upload(mainFilePath, mainFile);
+          
+        if (mainUploadError) {
+          throw new Error(`Failed to upload main image: ${mainUploadError.message}`);
+        }
+        
+        const { data: mainPublicUrlData } = supabase.storage
+          .from('public')
+          .getPublicUrl(mainFilePath);
+          
+        mainImageUrl = mainPublicUrlData.publicUrl;
+        
+        // Upload additional images if there are more files
+        if (imageFiles.length > 1) {
+          for (let i = 1; i < imageFiles.length; i++) {
+            const file = imageFiles[i];
+            const fileName = `${Date.now()}-${i}-${file.name}`;
+            const filePath = `products/${fileName}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('public')
+              .upload(filePath, file);
+              
+            if (uploadError) {
+              console.warn(`Failed to upload additional image ${i}:`, uploadError.message);
+              continue;
+            }
+            
+            const { data: publicUrlData } = supabase.storage
+              .from('public')
+              .getPublicUrl(filePath);
+              
+            additionalImagesUrls.push(publicUrlData.publicUrl);
+          }
+        }
+      }
+
+      if (!mainImageUrl) {
+        toast({
+          title: "Main image is required",
+          description: "Please provide either an image URL or upload an image file.",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        return;
+      }
+
+      const productData = {
+        ...formData,
+        image_url: mainImageUrl,
+        additional_images: additionalImagesUrls
+      };
+
+      const newProduct = await addProduct(productData);
       if (newProduct) {
         toast({
           title: "Product added",
@@ -98,6 +217,8 @@ const AdminProducts = () => {
         description: "An error occurred while adding the product.",
         variant: "destructive"
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -105,11 +226,12 @@ const AdminProducts = () => {
     setCurrentProduct(product);
     setFormData({
       name: product.name,
-      description: product.description,
+      description: product.description || "",
       fullDescription: product.fullDescription || product.full_description || "",
       price: product.price,
-      category: product.category,
+      category: product.category || "",
       image_url: product.image_url || product.imageUrl || "",
+      additional_images: product.additional_images || [],
       in_stock: product.in_stock !== undefined ? product.in_stock : true
     });
     setIsEditDialogOpen(true);
@@ -128,6 +250,7 @@ const AdminProducts = () => {
         price: formData.price,
         category: formData.category,
         image_url: formData.image_url,
+        additional_images: formData.additional_images,
         in_stock: formData.in_stock
       });
       
@@ -197,7 +320,7 @@ const AdminProducts = () => {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>Create a new product to display in the catalog.</DialogDescription>
@@ -238,14 +361,19 @@ const AdminProducts = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="image_url">Image URL</label>
-                  <Input 
-                    id="image_url" 
-                    name="image_url" 
-                    value={formData.image_url} 
-                    onChange={handleInputChange} 
-                    placeholder="https://example.com/image.jpg" 
-                  />
+                  <label htmlFor="in_stock">Stock Status</label>
+                  <Select 
+                    value={formData.in_stock ? "true" : "false"}
+                    onValueChange={(value) => setFormData({...formData, in_stock: value === "true"})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">In Stock</SelectItem>
+                      <SelectItem value="false">Out of Stock</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -269,13 +397,75 @@ const AdminProducts = () => {
                   rows={4}
                 />
               </div>
+              <div className="grid gap-2">
+                <label>Product Images</label>
+                <div className="p-4 border border-dashed rounded-md bg-gray-50">
+                  <p className="text-sm mb-2">Upload multiple images at once (first image will be main)</p>
+                  <Input 
+                    id="image_files" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                    multiple
+                  />
+                  <p className="text-xs text-gray-500 mt-2 mb-2">Or add image URLs:</p>
+                  <div className="grid gap-2">
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        id="image_url" 
+                        name="image_url" 
+                        value={formData.image_url} 
+                        onChange={handleInputChange} 
+                        placeholder="Main image URL" 
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        type="text"
+                        value={additionalImageUrl}
+                        onChange={handleAdditionalImageChange}
+                        placeholder="Additional image URL"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="secondary" 
+                        onClick={addAdditionalImage}
+                        disabled={!additionalImageUrl}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {formData.additional_images.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Additional Images:</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {formData.additional_images.map((url, index) => (
+                          <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                            <span className="text-xs truncate flex-1 mr-2">{url}</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => removeAdditionalImage(index)}
+                            >
+                              <Trash size={14} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddProduct}>
-                Add Product
+              <Button onClick={handleAddProduct} disabled={isUploading}>
+                {isUploading ? "Uploading..." : "Add Product"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -331,7 +521,7 @@ const AdminProducts = () => {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>Update product information.</DialogDescription>
@@ -369,13 +559,19 @@ const AdminProducts = () => {
                 />
               </div>
               <div className="grid gap-2">
-                <label htmlFor="edit-image_url">Image URL</label>
-                <Input 
-                  id="edit-image_url" 
-                  name="image_url" 
-                  value={formData.image_url} 
-                  onChange={handleInputChange} 
-                />
+                <label htmlFor="edit-in_stock">Stock Status</label>
+                <Select 
+                  value={formData.in_stock ? "true" : "false"}
+                  onValueChange={(value) => setFormData({...formData, in_stock: value === "true"})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">In Stock</SelectItem>
+                    <SelectItem value="false">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid gap-2">
@@ -396,6 +592,59 @@ const AdminProducts = () => {
                 onChange={handleInputChange} 
                 rows={4}
               />
+            </div>
+            <div className="grid gap-2">
+              <label>Product Images</label>
+              <div className="p-4 border border-dashed rounded-md bg-gray-50">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      id="edit-image_url" 
+                      name="image_url" 
+                      value={formData.image_url} 
+                      onChange={handleInputChange} 
+                      placeholder="Main image URL" 
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type="text"
+                      value={additionalImageUrl}
+                      onChange={handleAdditionalImageChange}
+                      placeholder="Additional image URL"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      onClick={addAdditionalImage}
+                      disabled={!additionalImageUrl}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                
+                {formData.additional_images.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Additional Images:</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {formData.additional_images.map((url, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <span className="text-xs truncate flex-1 mr-2">{url}</span>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => removeAdditionalImage(index)}
+                          >
+                            <Trash size={14} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
