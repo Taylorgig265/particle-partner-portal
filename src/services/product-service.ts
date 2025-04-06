@@ -348,8 +348,11 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // Use rpc instead of directly querying a non-existent table
-      const { data, error } = await supabase.rpc('submit_quote_request', quoteRequest);
+      // Use rpc with type assertion to avoid TypeScript error
+      const { data, error } = await supabase.rpc(
+        'submit_quote_request' as any, 
+        quoteRequest
+      );
 
       if (error) throw error;
 
