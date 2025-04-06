@@ -348,8 +348,7 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // Fix: Use direct fetch for quote_requests since it's not in the Supabase types
-      // This is a temporary solution until we add quote_requests to the database
+      // Use rpc instead of directly querying a non-existent table
       const { data, error } = await supabase.rpc('submit_quote_request', quoteRequest);
 
       if (error) throw error;
