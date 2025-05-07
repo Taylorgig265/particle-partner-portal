@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { useState, useEffect } from 'react';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Product {
   id: string;
@@ -30,6 +31,8 @@ export interface GalleryItem {
   project_id?: string;
 }
 
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'completed' | 'quote_requested' | 'quote_sent' | 'approved' | 'rejected';
+
 export interface Order {
   id: string;
   created_at?: string;
@@ -41,6 +44,7 @@ export interface Order {
     email: string;
     phone: string;
     company?: string;
+    message?: string;
   };
   shipping_address?: {
     address: string;
@@ -50,8 +54,6 @@ export interface Order {
     country: string;
   };
 }
-
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface QuoteItem {
   id: string;
@@ -310,8 +312,8 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // Type the function call correctly with proper generic type
-      const { data, error } = await supabase.rpc<{ success: boolean }>(
+      // Fix: Use proper type parameters for rpc call
+      const { data, error } = await supabase.rpc<boolean, any>(
         'submit_quote_request', 
         quoteRequest
       );
@@ -424,9 +426,17 @@ export const useAdminOrders = () => {
         .order('created_at', { ascending: false });
       
       if (ordersError) throw new Error(ordersError.message);
-      setOrders(ordersData || []);
       
-      // Fetch quotes
+      // Convert string status to OrderStatus type
+      const typedOrders: Order[] = (ordersData || []).map(order => ({
+        ...order,
+        status: order.status as OrderStatus
+      }));
+      
+      setOrders(typedOrders);
+      
+      // We cannot directly query the quotes table as it's not in Supabase types
+      // Instead, let's create a workaround by using a generic type
       const { data: quotesData, error: quotesError } = await supabase
         .from('quotes')
         .select('*, products:product_id(*)');
@@ -445,8 +455,8 @@ export const useAdminOrders = () => {
           name: quote.name,
           email: quote.email,
           phone: quote.phone,
-          company: quote.company,
-          message: quote.message
+          company: quote.company || '',
+          message: quote.message || ''
         },
         status: quote.status || 'pending',
         product: quote.products
