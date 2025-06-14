@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 
 export interface Project {
   id: string;
@@ -15,49 +15,51 @@ export const useProjects = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setProjects(data || []);
     } catch (err: any) {
       console.error('Error fetching projects:', err);
       setError(err.message || 'Failed to fetch projects');
+      setProjects([]); // Clear projects on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Dependencies: setLoading, setError, setProjects are stable
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]); // Depend on memoized fetchProjects
 
-  const addProject = async (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+  const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('projects')
         .insert(projectData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
       
-      setProjects(prev => [...prev, data as Project]);
+      await fetchProjects(); // Refresh the list
       return data as Project;
     } catch (err: any) {
       console.error('Error adding project:', err);
-      throw err;
+      throw err; // Re-throw for the caller to handle
     }
-  };
+  }, [fetchProjects]);
 
-  const updateProject = async (projectData: Project) => {
+  const updateProject = useCallback(async (projectData: Project) => {
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('projects')
         .update({
           name: projectData.name,
@@ -66,35 +68,34 @@ export const useProjects = () => {
         })
         .eq('id', projectData.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
       
-      setProjects(prev => 
-        prev.map(p => p.id === projectData.id ? {...p, ...projectData} : p)
-      );
-      
+      await fetchProjects(); // Refresh the list
       return true;
     } catch (err: any) {
       console.error('Error updating project:', err);
+      // Consider re-throwing or returning a more specific error object
       return false;
     }
-  };
+  }, [fetchProjects]);
 
-  const deleteProject = async (id: string) => {
+  const deleteProject = useCallback(async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('projects')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       
-      setProjects(prev => prev.filter(p => p.id !== id));
+      await fetchProjects(); // Refresh the list
       return true;
     } catch (err: any) {
       console.error('Error deleting project:', err);
+      // Consider re-throwing or returning a more specific error object
       return false;
     }
-  };
+  }, [fetchProjects]);
 
   return {
     projects,
@@ -106,3 +107,4 @@ export const useProjects = () => {
     deleteProject
   };
 };
+

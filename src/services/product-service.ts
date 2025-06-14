@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { Json } from '@/integrations/supabase/types';
 
 export interface Product {
@@ -118,7 +118,7 @@ export const useAdminProducts = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -126,76 +126,72 @@ export const useAdminProducts = () => {
       setProducts(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load products');
+      setProducts([]); // Clear products on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Dependencies: setLoading, setError, setProducts are stable
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
-  const addProduct = async (product: Omit<Product, 'id'>): Promise<void> => {
+  const addProduct = useCallback(async (product: Omit<Product, 'id'>): Promise<void> => {
     try {
-      const newProduct = { ...product, id: uuidv4(), is_featured: product.is_featured || false }; // Ensure is_featured has a default
-      const { error } = await supabase
+      const newProduct = { ...product, id: uuidv4(), is_featured: product.is_featured || false };
+      const { error: insertError } = await supabase
         .from('products')
         .insert([newProduct]);
 
-      if (error) {
-        console.error('Error adding product:', error);
-        throw error;
+      if (insertError) {
+        console.error('Error adding product:', insertError);
+        throw insertError;
       }
-      
       await fetchProducts();
     } catch (error: any) {
       console.error('Error in addProduct:', error);
       throw new Error(error.message || "Could not add product");
     }
-  };
+  }, [fetchProducts]);
 
-  const updateProduct = async (product: Product): Promise<boolean> => {
+  const updateProduct = useCallback(async (product: Product): Promise<boolean> => {
     try {
-      // Ensure is_featured is included in the update, defaulting to false if undefined
       const productToUpdate = { ...product, is_featured: product.is_featured || false };
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('products')
         .update(productToUpdate)
         .eq('id', product.id);
 
-      if (error) {
-        console.error('Error updating product:', error);
+      if (updateError) {
+        console.error('Error updating product:', updateError);
         return false;
       }
-      
       await fetchProducts();
       return true;
     } catch (error: any) {
       console.error('Error in updateProduct:', error);
       throw new Error(error.message || "Could not update product");
     }
-  };
+  }, [fetchProducts]);
 
-  const deleteProduct = async (id: string): Promise<boolean> => {
+  const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('products')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting product:', error);
+      if (deleteError) {
+        console.error('Error deleting product:', deleteError);
         return false;
       }
-      
-      // Refresh products after deleting
       await fetchProducts();
       return true;
     } catch (error: any) {
       console.error('Error in deleteProduct:', error);
       throw new Error(error.message || "Could not delete product");
     }
-  };
+  }, [fetchProducts]);
 
   return {
     products,
@@ -215,14 +211,13 @@ export const useProducts = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsData = async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await getProducts();
         setProducts(data);
         
-        // Group products by category
         const groupedProducts = data.reduce((acc, product) => {
           if (!product.category) return acc;
           
@@ -240,12 +235,14 @@ export const useProducts = () => {
         setCategories(Object.values(groupedProducts));
       } catch (err: any) {
         setError(err.message || 'Failed to load products');
+        setProducts([]); // Clear products on error
+        setCategories([]); // Clear categories on error
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchProductsData();
   }, []);
 
   return {
@@ -262,9 +259,10 @@ export const useProduct = (id?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductData = async () => {
       if (!id) {
         setLoading(false);
+        setProduct(null); // Ensure product is null if no id
         return;
       }
 
@@ -275,12 +273,13 @@ export const useProduct = (id?: string) => {
         setProduct(data);
       } catch (err: any) {
         setError(err.message || 'Failed to load product');
+        setProduct(null); // Clear product on error
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProduct();
+    fetchProductData();
   }, [id]);
 
   return {
@@ -291,7 +290,7 @@ export const useProduct = (id?: string) => {
 };
 
 export const useQuoteRequest = () => {
-  const submitQuoteRequest = async (
+  const submitQuoteRequest = useCallback(async (
     productId: string,
     quantity: number,
     contactInfo: {
@@ -319,46 +318,43 @@ export const useQuoteRequest = () => {
       );
 
       if (error) throw error;
-
       return data;
     } catch (error) {
       console.error('Error submitting quote request:', error);
       throw error;
     }
-  };
+  }, []); // No dependencies that change
 
   return { submitQuoteRequest };
 };
 
-// Implementation for useGallery with required functions
 export const useGallery = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGalleryItems = async (projectId?: string) => {
+  const fetchGalleryItems = useCallback(async (projectId?: string) => {
     setLoading(true);
+    setError(null);
     try {
       let query = supabase.from('gallery').select('*');
-      
       if (projectId) {
         query = query.eq('project_id', projectId);
       }
-      
-      const { data, error: fetchError } = await query;
+      // Add default ordering, e.g., by creation date
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
       
       if (fetchError) throw new Error(fetchError.message);
-      
       setItems(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load gallery items');
+      setItems([]); // Clear items on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // setLoading, setItems, setError are stable
 
-  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'created_at'>) => {
-    setLoading(true);
+  const addGalleryItem = useCallback(async (item: Omit<GalleryItem, 'id' | 'created_at'>) => {
     try {
       const { data, error: insertError } = await supabase
         .from('gallery')
@@ -366,18 +362,18 @@ export const useGallery = () => {
         .select();
       
       if (insertError) throw new Error(insertError.message);
-      await fetchGalleryItems(item.project_id);
+      await fetchGalleryItems(item.project_id); // Refresh items for the specific project
       return data?.[0];
     } catch (err: any) {
-      setError(err.message || 'Failed to add gallery item');
+      console.error('Error in addGalleryItem:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [fetchGalleryItems]);
 
-  const deleteGalleryItem = async (id: string) => {
-    setLoading(true);
+  const deleteGalleryItem = useCallback(async (id: string) => {
+    // To refresh correctly, we might need to know the current project context,
+    // or always refresh all. For simplicity, refreshing all for now.
+    // AdminGallery.tsx might depend on this behavior.
     try {
       const { error: deleteError } = await supabase
         .from('gallery')
@@ -385,19 +381,17 @@ export const useGallery = () => {
         .eq('id', id);
       
       if (deleteError) throw new Error(deleteError.message);
-      await fetchGalleryItems();
+      await fetchGalleryItems(); // Refresh all gallery items
       return true;
     } catch (err: any) {
-      setError(err.message || 'Failed to delete gallery item');
+      console.error('Error in deleteGalleryItem:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [fetchGalleryItems]);
 
   useEffect(() => {
-    fetchGalleryItems();
-  }, []);
+    fetchGalleryItems(); // Initial fetch for all items
+  }, [fetchGalleryItems]); // Depend on memoized fetchGalleryItems
 
   return {
     items,
@@ -409,18 +403,16 @@ export const useGallery = () => {
   };
 };
 
-
-// Implementation for useAdminOrders with required functions
 export const useAdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [quotes, setQuotes] = useState<QuoteItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Fetch orders
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select('*')
@@ -428,32 +420,27 @@ export const useAdminOrders = () => {
       
       if (ordersError) throw new Error(ordersError.message);
       
-      // Convert string status to OrderStatus type and assert contact_details type
       const typedOrders: Order[] = (ordersData || []).map(order => ({
         ...order,
         status: order.status as OrderStatus,
-        contact_details: order.contact_details as Order['contact_details'], // Added type assertion
-        shipping_address: order.shipping_address as Order['shipping_address'] // Added type assertion for consistency
+        contact_details: order.contact_details as Order['contact_details'],
+        shipping_address: order.shipping_address as Order['shipping_address']
       }));
-      
       setOrders(typedOrders);
       
-      // We cannot directly query the quotes table as it's not in Supabase types
-      // Instead, let's create a workaround by using a generic type
       const { data: quotesData, error: quotesError } = await supabase
         .from('quotes')
-        .select('*, products:product_id(*)');
+        .select('*, products:product_id(*)'); // products:product_id(*) will embed product details
       
       if (quotesError) throw new Error(quotesError.message);
       
-      // Process quotes data to match our QuoteItem interface
       const processedQuotes: QuoteItem[] = (quotesData || []).map((quote: any) => ({
         id: quote.id,
         created_at: quote.created_at,
         product_id: quote.product_id,
         product_name: quote.products?.name,
         quantity: quote.quantity,
-        price_at_purchase: quote.products?.price,
+        price_at_purchase: quote.products?.price, // This assumes price is on product, adjust if needed
         contact_info: {
           name: quote.name,
           email: quote.email,
@@ -462,38 +449,39 @@ export const useAdminOrders = () => {
           message: quote.message || ''
         },
         status: quote.status || 'pending',
-        product: quote.products
+        product: quote.products // Store the embedded product object
       }));
-      
       setQuotes(processedQuotes);
+
     } catch (err: any) {
       setError(err.message || 'Failed to load orders and quotes');
+      setOrders([]); // Clear on error
+      setQuotes([]); // Clear on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Dependencies are stable state setters
 
-  const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<boolean> => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ status })
         .eq('id', orderId);
       
-      if (error) throw new Error(error.message);
-      
-      // Refresh orders after update
+      if (updateError) throw new Error(updateError.message);
       await fetchOrders();
       return true;
     } catch (err: any) {
-      setError(err.message || 'Failed to update order status');
-      return false;
+      // setError(err.message || 'Failed to update order status'); // fetchOrders will handle errors
+      console.error('Error in updateOrderStatus:', err); // Log specific error
+      return false; // Indicate failure
     }
-  };
+  }, [fetchOrders]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   return {
     orders,
@@ -505,14 +493,14 @@ export const useAdminOrders = () => {
   };
 };
 
-// Implementation for useAdminCustomers with required functions
 export const useAdminCustomers = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data, error: fetchError } = await supabase
         .from('profiles')
@@ -522,14 +510,15 @@ export const useAdminCustomers = () => {
       setCustomers(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load customers');
+      setCustomers([]); // Clear on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Dependencies are stable
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [fetchCustomers]);
 
   return {
     customers,
