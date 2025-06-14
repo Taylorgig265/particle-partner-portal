@@ -69,7 +69,17 @@ const ProductDetail = () => {
         <div>
           <h1 className="text-3xl font-bold text-particle-navy mb-4">{product.name}</h1>
           <p className="text-gray-600 mb-6">{product.description}</p>
-          <div className="flex items-center justify-between mb-4">
+          
+          {product.full_description ? (
+            <div className="mt-8 prose prose-blue max-w-none" 
+                 dangerouslySetInnerHTML={{ __html: product.full_description }} />
+          ) : (
+            <div className="mt-8">
+              <p className="text-gray-700">{product.description}</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-8 mb-4"> {/* Added mt-8 for spacing */}
             <span className="text-2xl font-semibold text-particle-navy">
               ${product.price.toLocaleString('en-US', {minimumFractionDigits: 2})}
             </span>
@@ -84,14 +94,6 @@ const ProductDetail = () => {
               }
             />
           </div>
-          {product.full_description ? (
-            <div className="mt-8 prose prose-blue max-w-none" 
-                 dangerouslySetInnerHTML={{ __html: product.full_description }} />
-          ) : (
-            <div className="mt-8">
-              <p className="text-gray-700">{product.description}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -99,3 +101,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
