@@ -14,7 +14,7 @@ import {
   FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea'; // Textarea will be replaced for full_description
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -40,12 +40,14 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ReactQuill from 'react-quill'; // Import ReactQuill
+import 'react-quill/dist/quill.snow.css'; // Import Quill styles
 
 // Form validation schema
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   description: z.string().optional(),
-  full_description: z.string().optional(), // Changed from fullDescription
+  full_description: z.string().optional(),
   price: z.coerce.number().min(0, { message: 'Price must be a positive number.' }),
   category: z.string().optional(),
   image_url: z.string().url({ message: 'Please enter a valid URL.' }).optional(),
@@ -66,7 +68,7 @@ const AdminProducts = () => {
     defaultValues: {
       name: '',
       description: '',
-      full_description: '', // Changed from fullDescription
+      full_description: '',
       price: 0,
       category: '',
       image_url: '',
@@ -80,7 +82,7 @@ const AdminProducts = () => {
       form.reset({
         name: selectedProduct.name,
         description: selectedProduct.description || '',
-        full_description: selectedProduct.full_description || '', // Changed from fullDescription
+        full_description: selectedProduct.full_description || '',
         price: selectedProduct.price,
         category: selectedProduct.category || '',
         image_url: selectedProduct.image_url || '',
@@ -88,7 +90,7 @@ const AdminProducts = () => {
         in_stock: selectedProduct.in_stock !== false,
       });
     } else {
-      form.reset(); // This will use the updated defaultValues
+      form.reset(); 
     }
   }, [selectedProduct, form]);
 
@@ -98,7 +100,7 @@ const AdminProducts = () => {
       const productData = {
         name: values.name,
         description: values.description,
-        full_description: values.full_description, // Changed from fullDescription
+        full_description: values.full_description,
         price: values.price,
         category: values.category,
         image_url: values.image_url,
@@ -122,7 +124,7 @@ const AdminProducts = () => {
           });
         }
       } else {
-        await addProduct(productData as Omit<Product, 'id' | 'created_at' | 'updated_at'>); // Cast to ensure compatibility with addProduct
+        await addProduct(productData as Omit<Product, 'id' | 'created_at' | 'updated_at'>);
         toast({
           title: "Product Added",
           description: "Product added successfully.",
@@ -179,7 +181,19 @@ const AdminProducts = () => {
     setSelectedProduct(null);
     setIsEditing(false);
     setIsDialogOpen(true);
+    // Reset form with potentially updated defaultValues, especially for full_description
+    form.reset({
+      name: '',
+      description: '',
+      full_description: '', 
+      price: 0,
+      category: '',
+      image_url: '',
+      additional_images: '',
+      in_stock: true,
+    });
   };
+
 
   return (
     <div>
@@ -238,14 +252,14 @@ const AdminProducts = () => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh]"> {/* Consider increasing max-width if editor needs more space */}
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Product' : 'Add Product'}</DialogTitle>
             <DialogDescription>
               {isEditing ? 'Edit the product details below.' : 'Enter the details for the new product.'}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="max-h-[60vh] pr-4"> {/* Adjusted max-h for editor */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -276,12 +290,34 @@ const AdminProducts = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="full_description" // Changed from fullDescription
+                  name="full_description"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Description (HTML)</FormLabel>
                       <FormControl>
-                        <Textarea className="h-32 font-mono text-sm" {...field} />
+                        <ReactQuill
+                          theme="snow"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          className="bg-background min-h-[200px]" // Added min-h for editor
+                          modules={{ // Basic toolbar options
+                            toolbar: [
+                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{'list': 'ordered'}, {'list': 'bullet'}],
+                              [{ 'indent': '-1'}, { 'indent': '+1' }],
+                              ['link'], // Removed 'image' and 'video' for simplicity, can be added back
+                              ['clean']
+                            ],
+                          }}
+                          formats={[ // Corresponding formats
+                            'header',
+                            'bold', 'italic', 'underline', 'strike',
+                            'list', 'bullet',
+                            'indent',
+                            'link',
+                          ]}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
