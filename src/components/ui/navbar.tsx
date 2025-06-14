@@ -47,12 +47,13 @@ const Navbar = () => {
           <nav className="hidden gap-6 md:flex">
             {navItems.map(
               (item, index) =>
-                index < navItems.length - 1 && (
+                // Hide the Admin link from the main desktop nav items
+                item.href !== "/admin" && (
                   <Link
                     key={item.href}
                     to={item.href}
                     className={cn(
-                      "flex items-center text-lg font-medium transition-colors hover:text-foreground/80 sm:text-sm"
+                      "flex items-center text-sm font-medium transition-colors hover:text-foreground/80"
                     )}
                   >
                     {item.title}
@@ -118,17 +119,20 @@ const Navbar = () => {
                       {item.icon}
                       {item.title}
                     </Link>
-                    {index < navItems.length - 1 && (
+                    {/* Add separator for all items except the last one in the sheet menu */}
+                    {index < navItems.length -1 && (
                       <Separator className="mt-2" />
                     )}
                   </div>
                 ))}
+                {/* Ensure "Request a Quote" is separated in the mobile menu */}
+                <Separator className="mt-2" />
                 <div>
                   <QuoteRequestDialog 
                     trigger={
                       <button
                         className="flex items-center gap-2 py-2 text-lg font-semibold w-full text-left"
-                        onClick={() => setOpen(false)}
+                        onClick={() => { setOpen(false); }}
                       >
                         <FileText className="h-5 w-5" />
                         Request a Quote
@@ -146,3 +150,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

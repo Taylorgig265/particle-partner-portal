@@ -43,60 +43,23 @@
   color: #888;
 }
 
-.content-container {
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  width: 100%;
-}
-
 /* Responsive improvements */
+/* Removed .content-container styles from here, as index.css provides a more robust Tailwind-based definition. */
+/* Removed h1 and h2 overrides as index.css handles responsive heading styles with Tailwind. */
+
 @media (max-width: 768px) {
-  .content-container {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-  
-  h1 {
-    font-size: 1.75rem !important;
-    line-height: 1.2;
-  }
-  
-  h2 {
-    font-size: 1.5rem !important;
-  }
-  
-  .grid {
-    gap: 1.5rem !important;
-  }
-  
-  .py-24 {
-    padding-top: 4rem !important;
-    padding-bottom: 4rem !important;
-  }
+  /* Removed .grid gap override. Apply responsive gap utilities directly in components. */
+  /* Removed .py-24 padding override. Apply responsive padding utilities directly in components. */
 }
 
 @media (max-width: 480px) {
-  .content-container {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-  
-  .gap-16 {
-    gap: 1rem !important;
-  }
-  
-  .py-16 {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-  }
+  /* Removed .py-16 padding override. Apply responsive padding utilities directly in components. */
 }
 
-/* Dialog responsiveness */
+/* Dialog responsiveness - kept as it targets specific Radix attributes */
 @media (max-width: 640px) {
   [data-radix-popper-content-wrapper] {
     padding: 0 0.5rem !important;
   }
 }
+
