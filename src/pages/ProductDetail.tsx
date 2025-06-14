@@ -88,7 +88,7 @@ const ProductDetail = () => {
           <p className="text-gray-600 mb-6">{product.description}</p>
           
           {product.full_description ? (
-            <div className="mt-8 prose prose-blue max-w-none" 
+            <div className="mt-8 prose max-w-none prose-headings:text-particle-navy prose-p:text-gray-700 prose-a:text-particle-secondary hover:prose-a:text-particle-accent prose-strong:text-particle-navy prose-ul:list-disc prose-ol:list-decimal prose-li:my-1" 
                  dangerouslySetInnerHTML={{ __html: product.full_description }} />
           ) : (
             <div className="mt-8">
@@ -119,3 +119,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
