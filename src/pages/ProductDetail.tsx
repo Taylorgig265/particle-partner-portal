@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, FileText } from 'lucide-react';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useProduct } from '@/services/product-service';
 import { useToast } from '@/components/ui/use-toast';
 import QuoteRequestDialog from '@/components/QuoteRequestDialog';
+import { formatCurrency } from '@/lib/utils'; // Added import for formatCurrency
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,9 +79,9 @@ const ProductDetail = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-8 mb-4"> {/* Added mt-8 for spacing */}
+          <div className="flex items-center justify-between mt-8 mb-4">
             <span className="text-2xl font-semibold text-particle-navy">
-              ${product.price.toLocaleString('en-US', {minimumFractionDigits: 2})}
+              {formatCurrency(product.price)}
             </span>
             <QuoteRequestDialog 
               productId={product.id} 
@@ -101,4 +101,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
