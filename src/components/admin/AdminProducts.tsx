@@ -53,6 +53,7 @@ const formSchema = z.object({
   image_url: z.string().url({ message: 'Please enter a valid URL.' }).optional(),
   additional_images: z.string().optional(),
   in_stock: z.boolean().default(true),
+  is_featured: z.boolean().default(false).optional(), // Added is_featured
 });
 
 const AdminProducts = () => {
@@ -74,6 +75,7 @@ const AdminProducts = () => {
       image_url: '',
       additional_images: '',
       in_stock: true,
+      is_featured: false, // Default value for is_featured
     },
   });
 
@@ -88,9 +90,20 @@ const AdminProducts = () => {
         image_url: selectedProduct.image_url || '',
         additional_images: (selectedProduct.additional_images || []).join(',') || '',
         in_stock: selectedProduct.in_stock !== false,
+        is_featured: selectedProduct.is_featured || false, // Set is_featured value
       });
     } else {
-      form.reset(); 
+      form.reset({ // Ensure reset includes is_featured for new products
+        name: '',
+        description: '',
+        full_description: '',
+        price: 0,
+        category: '',
+        image_url: '',
+        additional_images: '',
+        in_stock: true,
+        is_featured: false,
+      });
     }
   }, [selectedProduct, form]);
 
@@ -105,7 +118,8 @@ const AdminProducts = () => {
         category: values.category,
         image_url: values.image_url,
         additional_images: values.additional_images ? values.additional_images.split(',') : [],
-        in_stock: values.in_stock
+        in_stock: values.in_stock,
+        is_featured: values.is_featured || false, // Include is_featured
       };
 
       if (isEditing && selectedProduct) {
@@ -124,7 +138,7 @@ const AdminProducts = () => {
           });
         }
       } else {
-        await addProduct(productData as Omit<Product, 'id' | 'created_at' | 'updated_at'>);
+        await addProduct(productData as Omit<Product, 'id' | 'created_at'>);
         toast({
           title: "Product Added",
           description: "Product added successfully.",
@@ -181,7 +195,6 @@ const AdminProducts = () => {
     setSelectedProduct(null);
     setIsEditing(false);
     setIsDialogOpen(true);
-    // Reset form with potentially updated defaultValues, especially for full_description
     form.reset({
       name: '',
       description: '',
@@ -191,6 +204,7 @@ const AdminProducts = () => {
       image_url: '',
       additional_images: '',
       in_stock: true,
+      is_featured: false, // Reset is_featured for new product
     });
   };
 
@@ -223,6 +237,7 @@ const AdminProducts = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>In Stock</TableHead>
+                <TableHead>Featured</TableHead> {/* Added Featured column */}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -234,6 +249,7 @@ const AdminProducts = () => {
                   <TableCell>${product.price.toFixed(2)}</TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.in_stock ? 'Yes' : 'No'}</TableCell>
+                  <TableCell>{product.is_featured ? 'Yes' : 'No'}</TableCell> {/* Display Featured status */}
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -252,14 +268,14 @@ const AdminProducts = () => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh]"> {/* Consider increasing max-width if editor needs more space */}
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Product' : 'Add Product'}</DialogTitle>
             <DialogDescription>
               {isEditing ? 'Edit the product details below.' : 'Enter the details for the new product.'}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4"> {/* Adjusted max-h for editor */}
+          <ScrollArea className="max-h-[60vh] pr-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -299,18 +315,18 @@ const AdminProducts = () => {
                           theme="snow"
                           value={field.value || ''}
                           onChange={field.onChange}
-                          className="bg-background min-h-[200px]" // Added min-h for editor
-                          modules={{ // Basic toolbar options
+                          className="bg-background min-h-[200px]"
+                          modules={{
                             toolbar: [
                               [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
                               ['bold', 'italic', 'underline', 'strike'],
                               [{'list': 'ordered'}, {'list': 'bullet'}],
                               [{ 'indent': '-1'}, { 'indent': '+1' }],
-                              ['link'], // Removed 'image' and 'video' for simplicity, can be added back
+                              ['link'],
                               ['clean']
                             ],
                           }}
-                          formats={[ // Corresponding formats
+                          formats={[
                             'header',
                             'bold', 'italic', 'underline', 'strike',
                             'list', 'bullet',
@@ -384,6 +400,23 @@ const AdminProducts = () => {
                         <FormLabel>In Stock</FormLabel>
                         <FormDescription>
                           Whether the product is currently in stock
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel>Featured Product</FormLabel>
+                        <FormDescription>
+                          Mark this product as featured to display it on the homepage.
                         </FormDescription>
                       </div>
                       <FormControl>

@@ -1,9 +1,8 @@
-
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useProducts } from '@/services/product-service';
+import { useProducts, Product } from '@/services/product-service'; // Import Product interface
 import { useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -23,6 +22,7 @@ const categoryImages: Record<string, string> = {
   'Industrial Equipment': 'https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
 };
 
+
 const ProductsPreview = () => {
   const { products, loading, error } = useProducts();
   const { toast } = useToast();
@@ -37,45 +37,45 @@ const ProductsPreview = () => {
     }
   }, [error, toast]);
 
-  // Group products by category
-  const productsByCategory = products.reduce((acc, product) => {
+  // Filter for featured products
+  const featuredProducts = products.filter(product => product.is_featured);
+
+  // Group featured products by category
+  const productsByCategory = featuredProducts.reduce((acc, product) => {
     if (!product.category) return acc;
     
     if (!acc[product.category]) {
       acc[product.category] = {
         name: product.category,
-        products: []
+        products: [] as Product[] // Ensure products array is typed
       };
     }
     
     acc[product.category].products.push(product);
     return acc;
-  }, {} as Record<string, { name: string, products: any[] }>);
+  }, {} as Record<string, { name: string, products: Product[] }>);
   
   // Convert to array for easier rendering
   const categories = Object.values(productsByCategory);
 
-  // Get a representative image for each category
-  const getCategoryImage = (categoryName: string, products: any[] = []) => {
-    // Check if products array exists and has items
-    if (!products || products.length === 0) {
+  // Get a representative image for each category (from featured products)
+  const getCategoryImage = (categoryName: string, categoryProducts: Product[]) => {
+    if (!categoryProducts || categoryProducts.length === 0) {
       return categoryImages[categoryName] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
     }
     
-    // Try to find a product with an image
-    const productWithImage = products.find(p => p.image_url);
+    const productWithImage = categoryProducts.find(p => p.image_url);
     if (productWithImage) return productWithImage.image_url;
     
-    // Fallback to predefined category images
     return categoryImages[categoryName] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
   };
 
-  // Get color gradient for a category
   const getCategoryColor = (categoryName: string) => {
     return categoryColors[categoryName] || 'from-blue-500/20 to-blue-600/20';
   };
 
-  // Display up to 4 categories
+
+  // Display up to 4 categories of featured products
   const displayCategories = categories.slice(0, 4);
 
   return (
@@ -92,7 +92,7 @@ const ProductsPreview = () => {
             transition={{ duration: 0.6 }}
             className="inline-flex items-center px-3 py-1 rounded-full bg-particle-navy/5 text-particle-navy border border-particle-navy/10 mb-4"
           >
-            <span className="text-sm font-medium">Our Product Range</span>
+            <span className="text-sm font-medium">Our Featured Products</span>
           </motion.div>
           
           <motion.h2 
@@ -102,7 +102,7 @@ const ProductsPreview = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Comprehensive Medical Equipment Solutions
+            Explore Our Featured Equipment
           </motion.h2>
           
           <motion.p 
@@ -112,7 +112,7 @@ const ProductsPreview = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Discover our extensive range of high-quality diagnostic, laboratory, healthcare, and industrial equipment.
+            Discover our handpicked selection of high-quality diagnostic, laboratory, healthcare, and industrial equipment.
             All our products come with certification, warranty, and expert support.
           </motion.p>
         </div>
@@ -133,7 +133,7 @@ const ProductsPreview = () => {
           </div>
         ) : displayCategories.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-600">No product categories available</p>
+            <p className="text-gray-600">No featured products available at the moment.</p>
           </div>
         ) : (
           <motion.div 
@@ -152,7 +152,7 @@ const ProductsPreview = () => {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Link 
-                  to={`/products#${category.name}`}
+                  to={`/products#${category.name}`} // Link still goes to the full category page
                   className="block h-full"
                 >
                   <div className="h-full rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 card-hover group">
@@ -173,7 +173,7 @@ const ProductsPreview = () => {
                     <div className="p-6">
                       <p className="text-gray-600 mb-4">
                         {category.products && category.products.length > 0
-                          ? `${category.products.length} products available`
+                          ? `${category.products.length} featured product${category.products.length === 1 ? '' : 's'} in this category`
                           : "Explore our offerings in this category"}
                       </p>
                       <div className="flex items-center text-particle-navy font-medium group-hover:text-particle-accent transition-colors">

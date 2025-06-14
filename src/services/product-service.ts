@@ -14,6 +14,7 @@ export interface Product {
   image_url?: string;
   additional_images?: string[];
   in_stock?: boolean;
+  is_featured?: boolean; // Added is_featured
 }
 
 export interface CategoryWithProducts {
@@ -136,7 +137,7 @@ export const useAdminProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>): Promise<void> => {
     try {
-      const newProduct = { ...product, id: uuidv4() };
+      const newProduct = { ...product, id: uuidv4(), is_featured: product.is_featured || false }; // Ensure is_featured has a default
       const { error } = await supabase
         .from('products')
         .insert([newProduct]);
@@ -146,7 +147,6 @@ export const useAdminProducts = () => {
         throw error;
       }
       
-      // Refresh products after adding
       await fetchProducts();
     } catch (error: any) {
       console.error('Error in addProduct:', error);
@@ -156,9 +156,11 @@ export const useAdminProducts = () => {
 
   const updateProduct = async (product: Product): Promise<boolean> => {
     try {
+      // Ensure is_featured is included in the update, defaulting to false if undefined
+      const productToUpdate = { ...product, is_featured: product.is_featured || false };
       const { error } = await supabase
         .from('products')
-        .update(product)
+        .update(productToUpdate)
         .eq('id', product.id);
 
       if (error) {
@@ -166,7 +168,6 @@ export const useAdminProducts = () => {
         return false;
       }
       
-      // Refresh products after updating
       await fetchProducts();
       return true;
     } catch (error: any) {
