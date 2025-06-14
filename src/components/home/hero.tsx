@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
@@ -53,14 +52,14 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="space-y-6"
+              className="space-y-6 text-center" // Added text-center
             >
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-particle-navy/5 text-particle-navy border border-particle-navy/10">
                 <span className="h-2 w-2 rounded-full bg-particle-accent animate-pulse mr-2"></span>
                 <span className="text-sm font-medium">Trusted Medical Equipment Supplier</span>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-particle-navy animate-fade-in-down"> {/* Removed '!' from '!leading-tight' */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-particle-navy animate-fade-in-down">
                 Your Partner in <br />
                 <span className="text-particle-secondary relative inline-block">
                   Medical Supplies
@@ -69,7 +68,7 @@ const Hero = () => {
               </h1>
               
               <motion.p 
-                className="text-lg text-gray-600 max-w-xl"
+                className="text-lg text-gray-600 max-w-xl mx-auto" // Added mx-auto
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
@@ -79,7 +78,7 @@ const Hero = () => {
               </motion.p>
               
               <motion.div 
-                className="flex flex-col sm:flex-row gap-4 pt-4"
+                className="flex flex-col items-center sm:flex-row sm:justify-center gap-4 pt-4" // Added items-center and sm:justify-center
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
