@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, FileText } from 'lucide-react';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useProduct } from '@/services/product-service';
 import { useToast } from '@/components/ui/use-toast';
 import QuoteRequestDialog from '@/components/QuoteRequestDialog';
-import { formatCurrency } from '@/lib/utils'; // Added import for formatCurrency
+import { formatCurrency } from '@/lib/utils';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,10 +62,26 @@ const ProductDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <img 
-            src={product.image_url} 
+            src={product.image_url || '/placeholder.svg'} 
             alt={product.name} 
-            className="w-full rounded-xl shadow-md" 
+            className="w-full rounded-xl shadow-md mb-4" 
           />
+          {product.additional_images && product.additional_images.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-particle-navy mb-3">Additional Images</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {product.additional_images.map((imgUrl, index) => (
+                  <div key={index} className="img-zoom rounded-lg overflow-hidden shadow-sm">
+                    <img
+                      src={imgUrl || '/placeholder.svg'}
+                      alt={`${product.name} - additional image ${index + 1}`}
+                      className="w-full h-auto object-cover aspect-square"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div>
           <h1 className="text-3xl font-bold text-particle-navy mb-4">{product.name}</h1>
@@ -75,7 +92,8 @@ const ProductDetail = () => {
                  dangerouslySetInnerHTML={{ __html: product.full_description }} />
           ) : (
             <div className="mt-8">
-              <p className="text-gray-700">{product.description}</p>
+              {/* Fallback if no full_description, could show regular description again or a message */}
+              <p className="text-gray-700">{product.description || "No detailed description available."}</p>
             </div>
           )}
 
@@ -101,3 +119,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
