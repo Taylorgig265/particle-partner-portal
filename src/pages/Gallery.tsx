@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added import
+import { useNavigate, Link } from 'react-router-dom';
 import { useGallery } from '@/services/product-service';
-import { useProjects } from '@/services/project-service';
+import { useProjects, Project } from '@/services/project-service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageIcon, Loader2, FolderOpen } from 'lucide-react';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
+import { 
+  Card, 
+  CardContent, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { 
   Tabs, 
   TabsContent, 
@@ -15,23 +22,20 @@ import {
 import { cn } from '@/lib/utils';
 
 const Gallery = () => {
-  const [activeProject, setActiveProject] = useState<string | null>(null); // This will now primarily control the "All Projects" view
+  const [activeProject, setActiveProject] = useState<string | null>(null);
   const { items, loading: galleryLoading, error: galleryError, fetchGalleryItems } = useGallery();
   const { projects, loading: projectsLoading, error: projectsError } = useProjects();
-  const navigate = useNavigate(); // Added useNavigate
+  const navigate = useNavigate();
 
-  // Effect to fetch gallery items. If activeProject is null, fetches all. Otherwise, fetches for that project.
-  // This will mainly be used for the "All Projects" tab on this page.
   useEffect(() => {
     console.log('Gallery.tsx useEffect, activeProject:', activeProject);
     if (activeProject) {
       fetchGalleryItems(activeProject);
     } else {
-      fetchGalleryItems(); // Fetch all items if activeProject is null
+      fetchGalleryItems();
     }
   }, [activeProject, fetchGalleryItems]);
 
-  // Animation variants
   const containerVariants = {
     initial: { opacity: 0 },
     animate: { 
@@ -77,7 +81,7 @@ const Gallery = () => {
               </p>
             </div>
 
-            {loading && activeProject === null ? ( // Show general loading only if not navigating away
+            {loading && activeProject === null ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-10 w-10 text-particle-navy animate-spin mr-4" />
                 <p className="text-lg text-gray-600">Loading gallery...</p>
@@ -89,25 +93,19 @@ const Gallery = () => {
               </div>
             ) : (
               <div className="space-y-8">
-                {/* Project tabs */}
                 {projects.length > 0 && (
                   <Tabs 
-                    defaultValue="all" // Default to "all"
+                    defaultValue="all"
                     className="w-full"
                     onValueChange={(value) => {
                       console.log('Tab changed to:', value);
                       if (value === 'all') {
-                        setActiveProject(null); 
-                        // useEffect will fetch all items
+                        setActiveProject(null);
                       } else {
-                        // For specific projects, navigate to the new page
-                        // Setting activeProject here is mostly for visual feedback on the tab if needed,
-                        // but the main action is navigation.
-                        setActiveProject(value); // This helps keep the tab visually active if user navigates back quickly
+                        setActiveProject(value);
                         navigate(`/gallery/project/${value}`);
                       }
                     }}
-                    // value prop can be used to control the active tab if needed, e.g., when navigating back
                     value={activeProject || "all"}
                   >
                     <TabsList className="flex-wrap h-auto mb-8">
@@ -127,7 +125,6 @@ const Gallery = () => {
                       ))}
                     </TabsList>
                     
-                    {/* Content for "All Projects" tab */}
                     <TabsContent value="all">
                       {items.length === 0 && activeProject === null ? (
                         <div className="text-center py-20 bg-gray-50 rounded-lg">
@@ -170,10 +167,8 @@ const Gallery = () => {
                         </motion.div>
                       )}
                     </TabsContent>
-                    {/* Project-specific TabsContent are not needed here as we navigate away */}
                     {projects.map(p => (
                       <TabsContent key={p.id} value={p.id}>
-                        {/* This content will likely not be shown as we navigate away. Could show a loader. */}
                         <div className="flex items-center justify-center py-20">
                            <Loader2 className="h-8 w-8 text-particle-navy animate-spin mr-3" />
                            <span>Loading project: {p.name}...</span>
@@ -183,7 +178,6 @@ const Gallery = () => {
                   </Tabs>
                 )}
 
-                {/* Fallback if there are no projects to create tabs */}
                 {projects.length === 0 && !loading && !error && (
                    items.length === 0 ? (
                     <div className="text-center py-20 bg-gray-50 rounded-lg">
@@ -192,7 +186,6 @@ const Gallery = () => {
                       <p className="mt-2 text-gray-500">Check back soon for updates.</p>
                     </div>
                   ) : (
-                    // This case handles if there are items but no projects (items not assigned to any project)
                     <motion.div 
                       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                       variants={containerVariants}
