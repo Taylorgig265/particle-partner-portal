@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, FileText } from 'lucide-react';
@@ -83,9 +84,9 @@ const ProductDetail = () => {
               }
             />
           </div>
-          {product.fullDescription ? (
+          {product.full_description ? (
             <div className="mt-8 prose prose-blue max-w-none" 
-                 dangerouslySetInnerHTML={{ __html: product.fullDescription }} />
+                 dangerouslySetInnerHTML={{ __html: product.full_description }} />
           ) : (
             <div className="mt-8">
               <p className="text-gray-700">{product.description}</p>

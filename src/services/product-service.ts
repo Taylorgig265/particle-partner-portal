@@ -72,6 +72,7 @@ export interface QuoteItem {
   product?: Product;
 }
 
+
 export const getProducts = async (): Promise<Product[]> => {
   try {
     const { data, error } = await supabase
@@ -311,8 +312,7 @@ export const useQuoteRequest = () => {
         message: contactInfo.message
       };
 
-      // Fix: Use proper type parameters for rpc call
-      const { data, error } = await supabase.rpc<boolean, any>(
+      const { data, error } = await supabase.rpc(
         'submit_quote_request', 
         quoteRequest
       );
@@ -408,6 +408,7 @@ export const useGallery = () => {
   };
 };
 
+
 // Implementation for useAdminOrders with required functions
 export const useAdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -426,10 +427,12 @@ export const useAdminOrders = () => {
       
       if (ordersError) throw new Error(ordersError.message);
       
-      // Convert string status to OrderStatus type
+      // Convert string status to OrderStatus type and assert contact_details type
       const typedOrders: Order[] = (ordersData || []).map(order => ({
         ...order,
-        status: order.status as OrderStatus
+        status: order.status as OrderStatus,
+        contact_details: order.contact_details as Order['contact_details'], // Added type assertion
+        shipping_address: order.shipping_address as Order['shipping_address'] // Added type assertion for consistency
       }));
       
       setOrders(typedOrders);
