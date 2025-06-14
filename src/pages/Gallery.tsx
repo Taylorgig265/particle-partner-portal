@@ -1,40 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+
+import React from 'react'; // Removed useState, useEffect as activeProject is removed
+import { Link } from 'react-router-dom'; // useNavigate removed as navigation is direct via Link
 import { useGallery } from '@/services/product-service';
 import { useProjects, Project } from '@/services/project-service';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ImageIcon, Loader2, FolderOpen } from 'lucide-react';
+import { ImageIcon, Loader2, FolderOpen, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
 import { 
   Card, 
   CardContent, 
-  CardFooter, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription // Added CardDescription
 } from "@/components/ui/card";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button'; // For "View Project" button on cards
 
 const Gallery = () => {
-  const [activeProject, setActiveProject] = useState<string | null>(null);
-  const { items, loading: galleryLoading, error: galleryError, fetchGalleryItems } = useGallery();
+  const { items: galleryItems, loading: galleryLoading, error: galleryError } = useGallery();
   const { projects, loading: projectsLoading, error: projectsError } = useProjects();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log('Gallery.tsx useEffect, activeProject:', activeProject);
-    if (activeProject) {
-      fetchGalleryItems(activeProject);
-    } else {
-      fetchGalleryItems();
-    }
-  }, [activeProject, fetchGalleryItems]);
+  // Removed useEffect that was dependent on activeProject,
+  // as useGallery hook fetches all items initially.
 
   const containerVariants = {
     initial: { opacity: 0 },
@@ -58,9 +45,6 @@ const Gallery = () => {
     }
   };
 
-  const loading = galleryLoading || projectsLoading;
-  const error = galleryError || projectsError;
-
   return (
     <AnimatePresence>
       <motion.div
@@ -76,152 +60,125 @@ const Gallery = () => {
             <div className="text-center mb-16">
               <h1 className="text-4xl md:text-5xl font-bold text-particle-navy mb-4">Project Gallery</h1>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Discover our portfolio of completed projects and solutions. 
-                Each image tells a story of how we've helped our clients achieve their goals.
+                Explore our portfolio of projects or browse all images from our collective work.
               </p>
             </div>
 
-            {loading && activeProject === null ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-10 w-10 text-particle-navy animate-spin mr-4" />
-                <p className="text-lg text-gray-600">Loading gallery...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-16 bg-red-50 rounded-lg">
-                <p className="text-lg text-red-500 mb-4">{error}</p>
-                <p className="text-gray-600">Please try again later.</p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {projects.length > 0 && (
-                  <Tabs 
-                    defaultValue="all"
-                    className="w-full"
-                    onValueChange={(value) => {
-                      console.log('Tab changed to:', value);
-                      if (value === 'all') {
-                        setActiveProject(null);
-                      } else {
-                        setActiveProject(value);
-                        navigate(`/gallery/project/${value}`);
-                      }
-                    }}
-                    value={activeProject || "all"}
-                  >
-                    <TabsList className="flex-wrap h-auto mb-8">
-                      <TabsTrigger value="all" className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        <span>All Projects</span>
-                      </TabsTrigger>
-                      {projects.map((project) => (
-                        <TabsTrigger 
-                          key={project.id} 
-                          value={project.id}
-                          className="flex items-center gap-2"
-                        >
-                          <FolderOpen className="h-4 w-4" />
-                          <span>{project.name}</span>
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                    
-                    <TabsContent value="all">
-                      {items.length === 0 && activeProject === null ? (
-                        <div className="text-center py-20 bg-gray-50 rounded-lg">
-                          <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
-                          <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items yet</h3>
-                          <p className="mt-2 text-gray-500">Check back soon for updates to our project gallery.</p>
+            {/* Projects Section */}
+            <section className="mb-16">
+              <h2 className="text-3xl font-semibold text-particle-navy mb-8 text-center md:text-left">Our Projects</h2>
+              {projectsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-8 w-8 text-particle-navy animate-spin mr-3" />
+                  <p className="text-gray-600">Loading projects...</p>
+                </div>
+              ) : projectsError ? (
+                <div className="text-center py-10 bg-red-50 rounded-lg">
+                  <p className="text-lg text-red-500 mb-2">Error loading projects: {projectsError}</p>
+                  <p className="text-gray-600">Please try refreshing the page.</p>
+                </div>
+              ) : projects.length > 0 ? (
+                <motion.div 
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+                  variants={containerVariants}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {projects.map((project: Project) => (
+                    <motion.div key={project.id} variants={itemVariants}>
+                      <Card className="h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <CardHeader>
+                          <div className="flex items-center gap-3 mb-2">
+                            <FolderOpen className="h-8 w-8 text-particle-blue" />
+                            <CardTitle className="text-2xl text-particle-navy">{project.name}</CardTitle>
+                          </div>
+                          {project.description && (
+                            <CardDescription className="text-gray-600 line-clamp-3">
+                              {project.description}
+                            </CardDescription>
+                          )}
+                        </CardHeader>
+                        <CardContent className="flex-grow" /> {/* Pushes footer down */}
+                        <div className="p-6 pt-0">
+                           <Link to={`/gallery/project/${project.id}`} className="w-full">
+                            <Button variant="outline" className="w-full group">
+                              View Project
+                              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                          </Link>
                         </div>
-                      ) : (
-                        <motion.div 
-                          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                          variants={containerVariants}
-                          initial="initial"
-                          animate="animate"
-                        >
-                          {items.map((item) => (
-                            <motion.div 
-                              key={item.id}
-                              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-                              variants={itemVariants}
-                            >
-                              <div className="aspect-video">
-                                <img 
-                                  src={item.image_url} 
-                                  alt={item.title} 
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                                  }}
-                                />
-                              </div>
-                              <div className="p-6">
-                                <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
-                                {item.description && (
-                                  <p className="text-gray-600">{item.description}</p>
-                                )}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </TabsContent>
-                    {projects.map(p => (
-                      <TabsContent key={p.id} value={p.id}>
-                        <div className="flex items-center justify-center py-20">
-                           <Loader2 className="h-8 w-8 text-particle-navy animate-spin mr-3" />
-                           <span>Loading project: {p.name}...</span>
-                        </div>
-                      </TabsContent>
-                    ))}
-                  </Tabs>
-                )}
-
-                {projects.length === 0 && !loading && !error && (
-                   items.length === 0 ? (
-                    <div className="text-center py-20 bg-gray-50 rounded-lg">
-                      <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
-                      <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items or projects yet</h3>
-                      <p className="mt-2 text-gray-500">Check back soon for updates.</p>
-                    </div>
-                  ) : (
-                    <motion.div 
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                      variants={containerVariants}
-                      initial="initial"
-                      animate="animate"
-                    >
-                      {items.map((item) => (
-                        <motion.div 
-                          key={item.id}
-                          className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-                          variants={itemVariants}
-                        >
-                           <div className="aspect-video">
-                              <img 
-                                src={item.image_url} 
-                                alt={item.title} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                                }}
-                              />
-                            </div>
-                            <div className="p-6">
-                              <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
-                              {item.description && (
-                                <p className="text-gray-600">{item.description}</p>
-                              )}
-                            </div>
-                        </motion.div>
-                      ))}
+                      </Card>
                     </motion.div>
-                  )
-                )}
-              </div>
-            )}
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="text-center py-10 bg-gray-50 rounded-lg">
+                  <FolderOpen className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">No Projects Yet</h3>
+                  <p className="mt-1 text-gray-500">We're working on new projects. Check back soon!</p>
+                </div>
+              )}
+            </section>
+
+            {/* All Gallery Items Section */}
+            <section>
+              <h2 className="text-3xl font-semibold text-particle-navy mb-8 text-center md:text-left">All Gallery Images</h2>
+              {galleryLoading && projects.length === 0 && !projectsLoading ? ( // Show general gallery loader if projects also not loaded yet
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-10 w-10 text-particle-navy animate-spin mr-4" />
+                  <p className="text-lg text-gray-600">Loading gallery...</p>
+                </div>
+              ) : galleryLoading ? (
+                 <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-8 w-8 text-particle-navy animate-spin mr-3" />
+                  <p className="text-gray-600">Loading images...</p>
+                </div>
+              ) : galleryError ? (
+                <div className="text-center py-10 bg-red-50 rounded-lg">
+                  <p className="text-lg text-red-500 mb-2">Error loading gallery items: {galleryError}</p>
+                  <p className="text-gray-600">Please try refreshing the page.</p>
+                </div>
+              ) : galleryItems.length > 0 ? (
+                <motion.div 
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  variants={containerVariants}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {galleryItems.map((item) => (
+                    <motion.div 
+                      key={item.id}
+                      className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                      variants={itemVariants}
+                    >
+                      <div className="aspect-video">
+                        <img 
+                          src={item.image_url} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'; // Fallback image
+                          }}
+                        />
+                      </div>
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
+                        {item.description && (
+                          <p className="text-gray-600 text-sm line-clamp-2">{item.description}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="text-center py-20 bg-gray-50 rounded-lg">
+                  <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">No Gallery Items Yet</h3>
+                  <p className="mt-2 text-gray-500">Check back soon for updates to our project gallery.</p>
+                </div>
+              )}
+            </section>
           </div>
         </main>
         <Footer />
