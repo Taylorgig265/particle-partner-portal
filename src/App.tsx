@@ -8,6 +8,7 @@ import Contact from '@/pages/Contact';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import Gallery from '@/pages/Gallery';
+import ProjectGalleryPage from '@/pages/ProjectGalleryPage'; // Added import
 import Admin from '@/pages/Admin';
 import AdminLogin from '@/pages/AdminLogin';
 import NotFound from '@/pages/NotFound';
@@ -58,6 +59,7 @@ function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/gallery" element={<Gallery />} />
+            <Route path="/gallery/project/:projectId" element={<ProjectGalleryPage />} /> {/* Added route */}
             <Route path="/admin" element={
               <ProtectedRoute>
                 <Admin />
@@ -74,3 +76,4 @@ function App() {
 }
 
 export default App;
+

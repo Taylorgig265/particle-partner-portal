@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added import
 import { useGallery } from '@/services/product-service';
 import { useProjects } from '@/services/project-service';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,18 +15,21 @@ import {
 import { cn } from '@/lib/utils';
 
 const Gallery = () => {
-  const [activeProject, setActiveProject] = useState<string | null>(null);
+  const [activeProject, setActiveProject] = useState<string | null>(null); // This will now primarily control the "All Projects" view
   const { items, loading: galleryLoading, error: galleryError, fetchGalleryItems } = useGallery();
   const { projects, loading: projectsLoading, error: projectsError } = useProjects();
+  const navigate = useNavigate(); // Added useNavigate
 
-  // Effect to fetch appropriate gallery items when project changes
+  // Effect to fetch gallery items. If activeProject is null, fetches all. Otherwise, fetches for that project.
+  // This will mainly be used for the "All Projects" tab on this page.
   useEffect(() => {
+    console.log('Gallery.tsx useEffect, activeProject:', activeProject);
     if (activeProject) {
       fetchGalleryItems(activeProject);
     } else {
-      fetchGalleryItems();
+      fetchGalleryItems(); // Fetch all items if activeProject is null
     }
-  }, [activeProject]);
+  }, [activeProject, fetchGalleryItems]);
 
   // Animation variants
   const containerVariants = {
@@ -74,7 +77,7 @@ const Gallery = () => {
               </p>
             </div>
 
-            {loading ? (
+            {loading && activeProject === null ? ( // Show general loading only if not navigating away
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-10 w-10 text-particle-navy animate-spin mr-4" />
                 <p className="text-lg text-gray-600">Loading gallery...</p>
@@ -89,9 +92,23 @@ const Gallery = () => {
                 {/* Project tabs */}
                 {projects.length > 0 && (
                   <Tabs 
-                    defaultValue="all" 
+                    defaultValue="all" // Default to "all"
                     className="w-full"
-                    onValueChange={(value) => setActiveProject(value === 'all' ? null : value)}
+                    onValueChange={(value) => {
+                      console.log('Tab changed to:', value);
+                      if (value === 'all') {
+                        setActiveProject(null); 
+                        // useEffect will fetch all items
+                      } else {
+                        // For specific projects, navigate to the new page
+                        // Setting activeProject here is mostly for visual feedback on the tab if needed,
+                        // but the main action is navigation.
+                        setActiveProject(value); // This helps keep the tab visually active if user navigates back quickly
+                        navigate(`/gallery/project/${value}`);
+                      }
+                    }}
+                    // value prop can be used to control the active tab if needed, e.g., when navigating back
+                    value={activeProject || "all"}
                   >
                     <TabsList className="flex-wrap h-auto mb-8">
                       <TabsTrigger value="all" className="flex items-center gap-2">
@@ -109,49 +126,106 @@ const Gallery = () => {
                         </TabsTrigger>
                       ))}
                     </TabsList>
+                    
+                    {/* Content for "All Projects" tab */}
+                    <TabsContent value="all">
+                      {items.length === 0 && activeProject === null ? (
+                        <div className="text-center py-20 bg-gray-50 rounded-lg">
+                          <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
+                          <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items yet</h3>
+                          <p className="mt-2 text-gray-500">Check back soon for updates to our project gallery.</p>
+                        </div>
+                      ) : (
+                        <motion.div 
+                          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                          variants={containerVariants}
+                          initial="initial"
+                          animate="animate"
+                        >
+                          {items.map((item) => (
+                            <motion.div 
+                              key={item.id}
+                              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                              variants={itemVariants}
+                            >
+                              <div className="aspect-video">
+                                <img 
+                                  src={item.image_url} 
+                                  alt={item.title} 
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                                  }}
+                                />
+                              </div>
+                              <div className="p-6">
+                                <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
+                                {item.description && (
+                                  <p className="text-gray-600">{item.description}</p>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </TabsContent>
+                    {/* Project-specific TabsContent are not needed here as we navigate away */}
+                    {projects.map(p => (
+                      <TabsContent key={p.id} value={p.id}>
+                        {/* This content will likely not be shown as we navigate away. Could show a loader. */}
+                        <div className="flex items-center justify-center py-20">
+                           <Loader2 className="h-8 w-8 text-particle-navy animate-spin mr-3" />
+                           <span>Loading project: {p.name}...</span>
+                        </div>
+                      </TabsContent>
+                    ))}
                   </Tabs>
                 )}
 
-                {/* Gallery items */}
-                {items.length === 0 ? (
-                  <div className="text-center py-20 bg-gray-50 rounded-lg">
-                    <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items yet</h3>
-                    <p className="mt-2 text-gray-500">Check back soon for updates to our project gallery.</p>
-                  </div>
-                ) : (
-                  <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                    variants={containerVariants}
-                    initial="initial"
-                    animate="animate"
-                  >
-                    {items.map((item) => (
-                      <motion.div 
-                        key={item.id}
-                        className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-                        variants={itemVariants}
-                      >
-                        <div className="aspect-video">
-                          <img 
-                            src={item.image_url} 
-                            alt={item.title} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                            }}
-                          />
-                        </div>
-                        <div className="p-6">
-                          <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
-                          {item.description && (
-                            <p className="text-gray-600">{item.description}</p>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
+                {/* Fallback if there are no projects to create tabs */}
+                {projects.length === 0 && !loading && !error && (
+                   items.length === 0 ? (
+                    <div className="text-center py-20 bg-gray-50 rounded-lg">
+                      <ImageIcon className="mx-auto h-16 w-16 text-gray-400" />
+                      <h3 className="mt-4 text-lg font-semibold text-gray-900">No gallery items or projects yet</h3>
+                      <p className="mt-2 text-gray-500">Check back soon for updates.</p>
+                    </div>
+                  ) : (
+                    // This case handles if there are items but no projects (items not assigned to any project)
+                    <motion.div 
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                      variants={containerVariants}
+                      initial="initial"
+                      animate="animate"
+                    >
+                      {items.map((item) => (
+                        <motion.div 
+                          key={item.id}
+                          className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                          variants={itemVariants}
+                        >
+                           <div className="aspect-video">
+                              <img 
+                                src={item.image_url} 
+                                alt={item.title} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                                }}
+                              />
+                            </div>
+                            <div className="p-6">
+                              <h3 className="text-xl font-bold text-particle-navy mb-2">{item.title}</h3>
+                              {item.description && (
+                                <p className="text-gray-600">{item.description}</p>
+                              )}
+                            </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )
                 )}
               </div>
             )}
