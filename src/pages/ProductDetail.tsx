@@ -51,7 +51,7 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="container py-24">
+    <div className="content-container py-24"> {/* Changed 'container' to 'content-container' */}
       <Button asChild variant="ghost" className="mb-8">
         <Link to="/products">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -119,4 +119,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-

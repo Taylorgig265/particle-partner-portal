@@ -60,7 +60,7 @@ const Hero = () => {
                 <span className="text-sm font-medium">Trusted Medical Equipment Supplier</span>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold !leading-tight text-particle-navy animate-fade-in-down">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-particle-navy animate-fade-in-down"> {/* Removed '!' from '!leading-tight' */}
                 Your Partner in <br />
                 <span className="text-particle-secondary relative inline-block">
                   Medical Supplies
