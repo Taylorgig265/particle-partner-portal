@@ -45,7 +45,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   description: z.string().optional(),
-  fullDescription: z.string().optional(),
+  full_description: z.string().optional(), // Changed from fullDescription
   price: z.coerce.number().min(0, { message: 'Price must be a positive number.' }),
   category: z.string().optional(),
   image_url: z.string().url({ message: 'Please enter a valid URL.' }).optional(),
@@ -66,7 +66,7 @@ const AdminProducts = () => {
     defaultValues: {
       name: '',
       description: '',
-      fullDescription: '',
+      full_description: '', // Changed from fullDescription
       price: 0,
       category: '',
       image_url: '',
@@ -80,7 +80,7 @@ const AdminProducts = () => {
       form.reset({
         name: selectedProduct.name,
         description: selectedProduct.description || '',
-        fullDescription: selectedProduct.fullDescription || '',
+        full_description: selectedProduct.full_description || '', // Changed from fullDescription
         price: selectedProduct.price,
         category: selectedProduct.category || '',
         image_url: selectedProduct.image_url || '',
@@ -88,18 +88,17 @@ const AdminProducts = () => {
         in_stock: selectedProduct.in_stock !== false,
       });
     } else {
-      form.reset();
+      form.reset(); // This will use the updated defaultValues
     }
   }, [selectedProduct, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      // Fix: Ensure name is provided as required by the Product type
       const productData = {
-        name: values.name, // Explicitly include name to satisfy type requirements
+        name: values.name,
         description: values.description,
-        fullDescription: values.fullDescription,
+        full_description: values.full_description, // Changed from fullDescription
         price: values.price,
         category: values.category,
         image_url: values.image_url,
@@ -108,7 +107,6 @@ const AdminProducts = () => {
       };
 
       if (isEditing && selectedProduct) {
-        // Update existing product
         const updatedProduct = { ...selectedProduct, ...productData };
         const success = await updateProduct(updatedProduct);
         if (success) {
@@ -124,8 +122,7 @@ const AdminProducts = () => {
           });
         }
       } else {
-        // Add new product
-        await addProduct(productData);
+        await addProduct(productData as Omit<Product, 'id' | 'created_at' | 'updated_at'>); // Cast to ensure compatibility with addProduct
         toast({
           title: "Product Added",
           description: "Product added successfully.",
@@ -279,7 +276,7 @@ const AdminProducts = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="fullDescription"
+                  name="full_description" // Changed from fullDescription
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Description (HTML)</FormLabel>

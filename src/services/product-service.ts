@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ export interface Product {
   created_at?: string;
   name: string;
   description?: string;
-  fullDescription?: string;
+  full_description?: string;
   price: number;
   category?: string;
   image_url?: string;
