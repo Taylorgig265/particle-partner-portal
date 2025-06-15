@@ -465,7 +465,7 @@ export const useAdminOrders = () => {
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
     const { data, error: updateError } = await supabase
       .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status }) // The `updated_at` field is now handled by the database trigger.
       .eq('id', orderId)
       .select('*')
       .single();
