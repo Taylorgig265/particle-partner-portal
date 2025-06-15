@@ -6,27 +6,27 @@ import { ArrowRight } from 'lucide-react';
 const partners = [
   {
     name: 'BIOBASE',
-    logo: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    logo: '/lovable-uploads/68e3138f-6e95-48cb-8d65-f23224949632.png',
     description: 'Leading manufacturer of laboratory and medical equipment.'
   },
   {
     name: 'EDAN',
-    logo: 'https://images.unsplash.com/photo-1547489432-cf93fa6c71ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    logo: '/lovable-uploads/2842e31b-b235-445a-a4ba-1f20b01c236c.png',
     description: 'Innovative healthcare monitoring and diagnostic solutions.'
   },
   {
     name: 'MINITUBE',
-    logo: 'https://images.unsplash.com/photo-1516841273335-e39b37888115?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    logo: '/lovable-uploads/030f3826-7cec-4294-9a23-b53269844d99.png',
     description: 'Specialized technology for reproductive medicine and research.'
   },
   {
     name: 'ASCO-MED',
-    logo: 'https://images.unsplash.com/photo-1598067290156-a3b87d41564b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    logo: '/lovable-uploads/05fa59ac-cc96-4663-9455-a6ff85a0cb54.png',
     description: 'High-quality medical devices and equipment supplier.'
   },
   {
     name: 'GLADAN HEALTH',
-    logo: 'https://images.unsplash.com/photo-1596188773102-f9201aa09b61?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    logo: '/lovable-uploads/154c26f2-62ad-43fd-b3a5-7f07b92f3766.png',
     description: 'Comprehensive healthcare equipment and solutions.'
   },
   {
@@ -95,14 +95,24 @@ const Partners = () => {
             >
               <div className="rounded-lg overflow-hidden bg-particle-light/50 p-6 h-full flex flex-col">
                 <div className="h-16 mb-6 flex items-center justify-center">
-                  <div className="h-12 w-12 rounded-full overflow-hidden bg-white shadow-sm">
+                  {partner.name === 'MICRO-PROFIT' ? (
+                    <>
+                      <div className="h-12 w-12 rounded-full overflow-hidden bg-white shadow-sm">
+                        <img 
+                          src={partner.logo} 
+                          alt={partner.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <h3 className="ml-3 text-xl font-bold text-particle-navy">{partner.name}</h3>
+                    </>
+                  ) : (
                     <img 
                       src={partner.logo} 
-                      alt={partner.name} 
-                      className="w-full h-full object-cover"
+                      alt={`${partner.name} logo`}
+                      className="max-h-12 w-auto object-contain"
                     />
-                  </div>
-                  <h3 className="ml-3 text-xl font-bold text-particle-navy">{partner.name}</h3>
+                  )}
                 </div>
                 <p className="text-gray-600 flex-grow text-center">{partner.description}</p>
                 <div className="mt-6 pt-4 border-t border-gray-100 text-center">
