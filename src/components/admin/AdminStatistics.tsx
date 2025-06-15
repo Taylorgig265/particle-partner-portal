@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAdminOrders, Order } from "@/services/product-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +14,17 @@ import {
   Pie,
   Cell,
   Legend,
-  TooltipProps
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Loader2, Users, Eye } from "lucide-react";
 
 interface AdminStatisticsProps {
   visitorStats?: any; // Optional prop for visitor statistics
@@ -103,121 +110,217 @@ const AdminStatistics: React.FC<AdminStatisticsProps> = ({ visitorStats }) => {
     return [value, "Orders"];
   };
 
-  if (loading) return <div className="py-8 text-center">Loading statistics...</div>;
-  
-  if (error) return <div className="py-8 text-center text-red-500">Error loading statistics: {error}</div>;
-
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">{formatCurrency(totalRevenue)}</div>
-            <p className="text-xs text-gray-500 mt-1">Lifetime revenue</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">{totalOrders}</div>
-            <p className="text-xs text-gray-500 mt-1">Lifetime orders</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Average Order Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">{formatCurrency(averageOrderValue)}</div>
-            <p className="text-xs text-gray-500 mt-1">Per order average</p>
-          </CardContent>
-        </Card>
-      </div>
-      
       <Tabs defaultValue="orders">
-        <TabsList className="mb-4">
-          <TabsTrigger value="orders">Orders Over Time</TabsTrigger>
-          <TabsTrigger value="status">Orders by Status</TabsTrigger>
+        <TabsList className="mb-4 grid w-full grid-cols-2">
+          <TabsTrigger value="orders">Order Analytics</TabsTrigger>
+          <TabsTrigger value="visitors">Visitor Analytics</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="orders" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Orders & Revenue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {ordersByMonth.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={ordersByMonth}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                      <Tooltip formatter={formatTooltipValue} />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#8884d8" />
-                      <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No order data available</p>
-                  </div>
-                )}
+        <TabsContent value="orders">
+          {loading && <div className="py-8 text-center">Loading statistics...</div>}
+          {error && <div className="py-8 text-center text-red-500">Error loading statistics: {error}</div>}
+          {!loading && !error && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Total Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="font-bold text-2xl">{formatCurrency(totalRevenue)}</div>
+                    <p className="text-xs text-gray-500 mt-1">Lifetime revenue</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Total Orders</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="font-bold text-2xl">{totalOrders}</div>
+                    <p className="text-xs text-gray-500 mt-1">Lifetime orders</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Average Order Value</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="font-bold text-2xl">{formatCurrency(averageOrderValue)}</div>
+                    <p className="text-xs text-gray-500 mt-1">Per order average</p>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+              
+              <Tabs defaultValue="overview">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="overview">Orders Over Time</TabsTrigger>
+                  <TabsTrigger value="status">Orders by Status</TabsTrigger>
+                </TabsList>
+                <TabsContent value="overview">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monthly Orders & Revenue</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        {ordersByMonth.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={ordersByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                              <Tooltip formatter={formatTooltipValue} />
+                              <Legend />
+                              <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#8884d8" />
+                              <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : <div className="flex items-center justify-center h-full"><p className="text-gray-500">No order data available</p></div>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="status">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Orders by Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        {pieData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={pieData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                                {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                              </Pie>
+                              <Legend />
+                              <Tooltip formatter={(value, name, props) => [`${value} orders`, props.payload.name]} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        ) : <div className="flex items-center justify-center h-full"><p className="text-gray-500">No status data available</p></div>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
         </TabsContent>
         
-        <TabsContent value="status" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Orders by Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Legend />
-                      <Tooltip formatter={(value, name, props) => [`${value} orders`, props.payload.name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No status data available</p>
-                  </div>
-                )}
+        <TabsContent value="visitors" className="space-y-6">
+          {!visitorStats ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin mr-3 text-gray-500" />
+              <span className="text-gray-600">Loading visitor statistics...</span>
+            </div>
+          ) : !visitorStats.success ? (
+            <div className="text-center py-10 bg-red-50 text-red-600 rounded-lg">
+              Error loading visitor statistics. Please try again later.
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{visitorStats.uniqueVisitorCount}</div>
+                    <p className="text-xs text-muted-foreground">Total unique visitors</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Page Views</CardTitle>
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{visitorStats.totalPageViews}</div>
+                    <p className="text-xs text-muted-foreground">Total pages visited across the site</p>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Page Views</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={visitorStats.pageViewsByPage} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" />
+                          <YAxis dataKey="page" type="category" width={80} />
+                          <Tooltip />
+                          <Bar dataKey="count" name="Views" fill="#8884d8" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Visits (Last 7 Days)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={visitorStats.dailyVisitsData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="visits" name="Visits" fill="#82ca9d" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Visits</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Page</TableHead>
+                        <TableHead>Visitor ID</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead className="hidden md:table-cell">User Agent</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {visitorStats.recentVisits.map((visit: any) => (
+                        <TableRow key={visit.id}>
+                          <TableCell className="font-medium">{visit.page}</TableCell>
+                          <TableCell>
+                            <span className="font-mono text-xs" title={visit.visitor_id}>
+                              {visit.visitor_id.substring(0, 8)}...
+                            </span>
+                          </TableCell>
+                          <TableCell>{new Date(visit.created_at).toLocaleString()}</TableCell>
+                          <TableCell className="hidden md:table-cell max-w-sm truncate">{visit.user_agent}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

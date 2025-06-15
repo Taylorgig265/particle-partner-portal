@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -103,7 +102,8 @@ export const getVisitorStats = async () => {
 
     // Get visits per day for the last 7 days
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     
     const { data: dailyVisits, error: dailyError } = await supabase
       .from('visits')
@@ -115,20 +115,29 @@ export const getVisitorStats = async () => {
       throw dailyError;
     }
 
-    // Process daily visits into a format suitable for charts
-    const visitsByDay: { [key: string]: number } = {};
+    // Process daily visits into a format suitable for charts, ensuring all 7 days are present
+    const visitsByDay = new Map<string, number>();
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(sevenDaysAgo);
+        d.setDate(d.getDate() + i);
+        const dayKey = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        visitsByDay.set(dayKey, 0);
+    }
     
     if (dailyVisits) {
       dailyVisits.forEach(visit => {
-        const date = new Date(visit.created_at).toLocaleDateString();
-        visitsByDay[date] = (visitsByDay[date] || 0) + 1;
+        const visitDate = new Date(visit.created_at);
+        const dayKey = visitDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (visitsByDay.has(dayKey)) {
+            visitsByDay.set(dayKey, visitsByDay.get(dayKey)! + 1);
+        }
       });
     }
     
-    const dailyVisitsData = Object.entries(visitsByDay).map(([date, count]) => ({
+    const dailyVisitsData = Array.from(visitsByDay, ([date, visits]) => ({
       date,
-      visits: count
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      visits
+    }));
     
     console.log('Visitor statistics results:', {
       uniqueVisitors,
