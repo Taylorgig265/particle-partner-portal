@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -130,7 +131,7 @@ export default {
 				'slide-in-right': 'slide-in-right 0.5s ease-out',
 			},
 			fontFamily: {
-				poppins: ['Poppins', 'sans-serif']
+				lato: ['Lato', 'sans-serif']
 			}
 		}
 	},
@@ -139,3 +140,4 @@ export default {
     require("@tailwindcss/typography") // Added typography plugin
   ],
 } satisfies Config;
+
