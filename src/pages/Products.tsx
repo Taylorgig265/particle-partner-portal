@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Navbar from '@/components/ui/navbar';
 import Footer from '@/components/ui/footer';
 import { motion } from 'framer-motion';
+import { formatCurrency } from '@/lib/utils';
 
 const placeholderImage = 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
@@ -124,7 +125,7 @@ const Products = () => {
                             <p className="text-gray-600 line-clamp-2 flex-grow">{product.description}</p>
                             <div className="flex items-center mt-4 justify-between">
                               <p className="font-semibold text-particle-navy">
-                                ${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                {formatCurrency(product.price)}
                               </p>
                               <div className="flex items-center text-particle-accent font-medium">
                                 View Details
