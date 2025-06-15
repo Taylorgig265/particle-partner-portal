@@ -463,18 +463,36 @@ export const useAdminOrders = () => {
   }, []); // Dependencies are stable state setters
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
-    const { error: updateError } = await supabase
+    const { data, error: updateError } = await supabase
       .from('orders')
-      .update({ status })
-      .eq('id', orderId);
-    
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', orderId)
+      .select('*')
+      .single();
+
     if (updateError) {
       console.error('Error updating order status:', updateError);
       throw new Error(updateError.message);
     }
+
+    if (!data) {
+      throw new Error("Order not found or update failed to return data.");
+    }
     
-    await fetchOrders();
-  }, [fetchOrders]);
+    setOrders(prevOrders =>
+      prevOrders.map(order => {
+        if (order.id === orderId) {
+          return {
+            ...data,
+            status: data.status as OrderStatus,
+            contact_details: data.contact_details as Order['contact_details'],
+            shipping_address: data.shipping_address as Order['shipping_address']
+          };
+        }
+        return order;
+      })
+    );
+  }, [setOrders]);
 
   useEffect(() => {
     fetchOrders();
