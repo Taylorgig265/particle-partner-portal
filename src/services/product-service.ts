@@ -462,21 +462,18 @@ export const useAdminOrders = () => {
     }
   }, []); // Dependencies are stable state setters
 
-  const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<boolean> => {
-    try {
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', orderId);
-      
-      if (updateError) throw new Error(updateError.message);
-      await fetchOrders();
-      return true;
-    } catch (err: any) {
-      // setError(err.message || 'Failed to update order status'); // fetchOrders will handle errors
-      console.error('Error in updateOrderStatus:', err); // Log specific error
-      return false; // Indicate failure
+  const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId);
+    
+    if (updateError) {
+      console.error('Error updating order status:', updateError);
+      throw new Error(updateError.message);
     }
+    
+    await fetchOrders();
   }, [fetchOrders]);
 
   useEffect(() => {

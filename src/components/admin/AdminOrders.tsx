@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, 
@@ -89,10 +88,10 @@ const AdminOrders = () => {
         description: "Order status has been updated successfully.",
       });
     } catch (error) {
-      console.error(`Error updating status: ${error}`);
+      console.error(`Error updating status:`, error);
       toast({
         title: "Update Failed",
-        description: `Invalid status: ${newStatus}`,
+        description: error instanceof Error ? error.message : "An unknown error occurred while updating status.",
         variant: "destructive",
       });
     }
