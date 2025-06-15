@@ -527,6 +527,7 @@ export const useAdminCustomers = () => {
               id: p.id,
               email: p.email,
               name: p.name || (p as any).full_name || 'N/A',
+              phone: null, // Initialize phone for registered users
               source: 'Registered',
               created_at: p.created_at,
             });
@@ -534,16 +535,24 @@ export const useAdminCustomers = () => {
         });
       }
 
-      // Process guest customers from orders
+      // Process guest customers from orders and enrich registered users
       if (ordersData) {
         ordersData.forEach(o => {
           const contact = o.contact_details as any;
           if (contact && contact.email) {
-            if (!allCustomers.has(contact.email)) {
+            const existingCustomer = allCustomers.get(contact.email);
+            if (existingCustomer) {
+              // If user is registered, just update phone if it's missing
+              if (!existingCustomer.phone && contact.phone) {
+                existingCustomer.phone = contact.phone;
+              }
+            } else {
+              // If user is not registered, add as guest
               allCustomers.set(contact.email, {
                 id: `guest:${contact.email}`, // Create a stable unique ID
                 email: contact.email,
                 name: contact.name || 'N/A',
+                phone: contact.phone || null,
                 source: 'Guest',
                 created_at: o.created_at,
               });
