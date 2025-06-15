@@ -130,7 +130,7 @@ export default {
 				'slide-in-right': 'slide-in-right 0.5s ease-out',
 			},
 			fontFamily: {
-				lato: ['Lato', 'sans-serif']
+				poppins: ['Poppins', 'sans-serif']
 			}
 		}
 	},
