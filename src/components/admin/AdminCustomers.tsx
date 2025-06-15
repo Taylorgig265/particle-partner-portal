@@ -7,25 +7,37 @@ import {
   TableCaption,
   TableCell,
   TableHead,
+  TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 const AdminCustomers = () => {
   const { customers, loading, error, fetchCustomers } = useAdminCustomers();
   const [customerOrders, setCustomerOrders] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
-  // Improved implementation for fetchCustomerOrders using supabase
-  const fetchCustomerOrders = useCallback(async (customerId: string) => {
+  // Fetch orders based on customer type (Registered or Guest)
+  const fetchCustomerOrders = useCallback(async (customer: any) => {
+    if (!customer) return [];
     try {
-      console.log(`Fetching orders for customer: ${customerId}`);
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', customerId)
-        .order('created_at', { ascending: false });
+      let query;
+      if (customer.source === 'Registered') {
+        console.log(`Fetching orders for registered customer: ${customer.id}`);
+        query = supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', customer.id);
+      } else { // Guest customer
+        console.log(`Fetching orders for guest customer: ${customer.email}`);
+        query = supabase
+          .from('orders')
+          .select('*')
+          .eq('contact_details->>email', customer.email);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
         
       if (error) {
         console.error('Error fetching customer orders:', error);
@@ -41,7 +53,7 @@ const AdminCustomers = () => {
 
   const handleCustomerClick = async (customer: any) => {
     setSelectedCustomer(customer);
-    const orders = await fetchCustomerOrders(customer.id);
+    const orders = await fetchCustomerOrders(customer);
     setCustomerOrders(orders);
   };
 
@@ -60,18 +72,24 @@ const AdminCustomers = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Table>
-              <TableCaption>A list of your customers.</TableCaption>
-              <TableHead>
+              <TableCaption>A list of your customers (registered and guests).</TableCaption>
+              <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Type</TableHead>
                 </TableRow>
-              </TableHead>
+              </TableHeader>
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id} className="cursor-pointer hover:bg-accent" onClick={() => handleCustomerClick(customer)}>
-                    <TableCell>{customer.full_name || customer.name || 'N/A'}</TableCell>
+                    <TableCell>{customer.name || 'N/A'}</TableCell>
                     <TableCell>{customer.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={customer.source === 'Registered' ? 'default' : 'secondary'}>
+                        {customer.source}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -81,7 +99,7 @@ const AdminCustomers = () => {
             {selectedCustomer ? (
               <div>
                 <h3 className="text-xl font-semibold mb-2">Customer Details</h3>
-                <p>Name: {selectedCustomer.full_name || selectedCustomer.name || 'N/A'}</p>
+                <p>Name: {selectedCustomer.name || 'N/A'}</p>
                 <p>Email: {selectedCustomer.email}</p>
                 <h3 className="text-xl font-semibold mt-4 mb-2">Orders</h3>
                 {customerOrders.length > 0 ? (

@@ -502,19 +502,70 @@ export const useAdminCustomers = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase
+      // Fetch registered users from profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select('id, email, name, created_at');
+
+      if (profilesError) throw new Error(profilesError.message);
+
+      // Fetch contacts from orders to identify guest customers
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('contact_details, created_at')
+        .not('contact_details', 'is', null);
+
+      if (ordersError) throw new Error(ordersError.message);
       
-      if (fetchError) throw new Error(fetchError.message);
-      setCustomers(data || []);
+      const allCustomers = new Map<string, any>();
+
+      // Process registered users
+      if (profilesData) {
+        profilesData.forEach(p => {
+          if (p.email) {
+            allCustomers.set(p.email, {
+              id: p.id,
+              email: p.email,
+              name: p.name || (p as any).full_name || 'N/A',
+              source: 'Registered',
+              created_at: p.created_at,
+            });
+          }
+        });
+      }
+
+      // Process guest customers from orders
+      if (ordersData) {
+        ordersData.forEach(o => {
+          const contact = o.contact_details as any;
+          if (contact && contact.email) {
+            if (!allCustomers.has(contact.email)) {
+              allCustomers.set(contact.email, {
+                id: `guest:${contact.email}`, // Create a stable unique ID
+                email: contact.email,
+                name: contact.name || 'N/A',
+                source: 'Guest',
+                created_at: o.created_at,
+              });
+            }
+          }
+        });
+      }
+
+      // Sort customers by most recent activity
+      const customerList = Array.from(allCustomers.values()).sort((a,b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setCustomers(customerList);
+
     } catch (err: any) {
       setError(err.message || 'Failed to load customers');
-      setCustomers([]); // Clear on error
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
-  }, []); // Dependencies are stable
+  }, []);
 
   useEffect(() => {
     fetchCustomers();
