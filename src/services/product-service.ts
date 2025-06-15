@@ -437,10 +437,10 @@ export const useAdminOrders = () => {
   }, []); // Dependencies are stable state setters
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status }) // The `updated_at` field is now handled by the database trigger.
-      .eq('id', orderId);
+    const { error } = await supabase.rpc('update_order_status', {
+      order_id_param: orderId,
+      new_status: status,
+    });
 
     if (error) {
       console.error('Error updating order status:', error);
@@ -448,7 +448,6 @@ export const useAdminOrders = () => {
     }
 
     // After a successful update, refetch all orders to ensure the UI is up-to-date.
-    // This avoids issues with the update query not returning the updated row.
     await fetchOrders();
   }, [fetchOrders]);
 
