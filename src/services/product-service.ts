@@ -463,36 +463,20 @@ export const useAdminOrders = () => {
   }, []); // Dependencies are stable state setters
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
-    const { data, error: updateError } = await supabase
+    const { error } = await supabase
       .from('orders')
       .update({ status }) // The `updated_at` field is now handled by the database trigger.
-      .eq('id', orderId)
-      .select('*')
-      .single();
+      .eq('id', orderId);
 
-    if (updateError) {
-      console.error('Error updating order status:', updateError);
-      throw new Error(updateError.message);
+    if (error) {
+      console.error('Error updating order status:', error);
+      throw new Error(error.message);
     }
 
-    if (!data) {
-      throw new Error("Order not found or update failed to return data.");
-    }
-    
-    setOrders(prevOrders =>
-      prevOrders.map(order => {
-        if (order.id === orderId) {
-          return {
-            ...data,
-            status: data.status as OrderStatus,
-            contact_details: data.contact_details as Order['contact_details'],
-            shipping_address: data.shipping_address as Order['shipping_address']
-          };
-        }
-        return order;
-      })
-    );
-  }, [setOrders]);
+    // After a successful update, refetch all orders to ensure the UI is up-to-date.
+    // This avoids issues with the update query not returning the updated row.
+    await fetchOrders();
+  }, [fetchOrders]);
 
   useEffect(() => {
     fetchOrders();
