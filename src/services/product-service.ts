@@ -405,7 +405,7 @@ export const useGallery = () => {
 
 export const useAdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [quotes, setQuotes] = useState<QuoteItem[]>([]);
+  // The quotes logic was confusing and likely not used, so it's been removed for clarity.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -427,36 +427,10 @@ export const useAdminOrders = () => {
         shipping_address: order.shipping_address as Order['shipping_address']
       }));
       setOrders(typedOrders);
-      
-      const { data: quotesData, error: quotesError } = await supabase
-        .from('quotes')
-        .select('*, products:product_id(*)'); // products:product_id(*) will embed product details
-      
-      if (quotesError) throw new Error(quotesError.message);
-      
-      const processedQuotes: QuoteItem[] = (quotesData || []).map((quote: any) => ({
-        id: quote.id,
-        created_at: quote.created_at,
-        product_id: quote.product_id,
-        product_name: quote.products?.name,
-        quantity: quote.quantity,
-        price_at_purchase: quote.products?.price, // This assumes price is on product, adjust if needed
-        contact_info: {
-          name: quote.name,
-          email: quote.email,
-          phone: quote.phone,
-          company: quote.company || '',
-          message: quote.message || ''
-        },
-        status: quote.status || 'pending',
-        product: quote.products // Store the embedded product object
-      }));
-      setQuotes(processedQuotes);
 
     } catch (err: any) {
-      setError(err.message || 'Failed to load orders and quotes');
+      setError(err.message || 'Failed to load orders');
       setOrders([]); // Clear on error
-      setQuotes([]); // Clear on error
     } finally {
       setLoading(false);
     }
@@ -484,7 +458,6 @@ export const useAdminOrders = () => {
 
   return {
     orders,
-    quotes,
     loading,
     error,
     fetchOrders,
