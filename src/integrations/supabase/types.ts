@@ -314,6 +314,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_order_status: {
+        Args: { order_id_param: string; new_status: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

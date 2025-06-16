@@ -437,7 +437,8 @@ export const useAdminOrders = () => {
   }, []); // Dependencies are stable state setters
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus): Promise<void> => {
-    const { error } = await supabase.rpc('update_order_status', {
+    // Use type assertion to call the RPC function since TypeScript doesn't recognize it yet
+    const { error } = await (supabase as any).rpc('update_order_status', {
       order_id_param: orderId,
       new_status: status,
     });
