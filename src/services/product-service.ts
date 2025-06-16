@@ -73,6 +73,15 @@ export interface QuoteItem {
   product?: Product;
 }
 
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  created_at?: string;
+  product?: Product;
+}
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
@@ -110,6 +119,30 @@ export const getProductById = async (id?: string): Promise<Product | null> => {
   } catch (error: any) {
     console.error('Error in getProductById:', error);
     throw new Error(error.message || "Could not retrieve product");
+  }
+};
+
+export const getOrderItems = async (orderId: string): Promise<OrderItem[]> => {
+  try {
+    console.log('Fetching order items for order:', orderId);
+    const { data, error } = await supabase
+      .from('order_items')
+      .select(`
+        *,
+        product:products(*)
+      `)
+      .eq('order_id', orderId);
+
+    if (error) {
+      console.error('Error fetching order items:', error);
+      throw error;
+    }
+    
+    console.log('Order items fetched:', data);
+    return data || [];
+  } catch (error: any) {
+    console.error('Error in getOrderItems:', error);
+    throw new Error(error.message || "Could not retrieve order items");
   }
 };
 

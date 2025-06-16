@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Table, 
@@ -25,9 +26,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, Mail, RefreshCw } from "lucide-react";
-import { useAdminOrders, QuoteItem, Order, OrderStatus } from "@/services/product-service";
+import { useAdminOrders, QuoteItem, Order, OrderStatus, getOrderItems, OrderItem } from "@/services/product-service";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 const OrderStatusBadge = ({ status }: { status: string }) => {
   const statusColors = {
@@ -63,21 +65,31 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
 const AdminOrders = () => {
   const { orders, loading, error, fetchOrders, updateOrderStatus } = useAdminOrders();
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
-  const [orderItems, setOrderItems] = useState<QuoteItem[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderItemsLoading, setOrderItemsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
   
   const handleViewOrder = async (orderId: string) => {
+    console.log('Viewing order:', orderId);
     setActiveOrder(orderId);
     setOrderItemsLoading(true);
     
-    // Simulate loading order details
-    // In a real implementation, you would fetch the order details from the server
-    setTimeout(() => {
+    try {
+      const items = await getOrderItems(orderId);
+      console.log('Loaded order items:', items);
+      setOrderItems(items);
+    } catch (error) {
+      console.error('Error loading order items:', error);
+      toast({
+        title: "Error loading order items",
+        description: "Could not load order items. Please try again.",
+        variant: "destructive",
+      });
       setOrderItems([]);
+    } finally {
       setOrderItemsLoading(false);
-    }, 1000);
+    }
   };
   
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -203,7 +215,7 @@ const AdminOrders = () => {
                       {format(new Date(order.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell className="font-medium">
-                      MWK {Number(order.total_amount).toFixed(2)}
+                      {formatCurrency(order.total_amount)}
                     </TableCell>
                     <TableCell>
                       <Select
@@ -304,12 +316,12 @@ const AdminOrders = () => {
                           <div>
                             <div className="font-medium">{item.product?.name || "Unknown Product"}</div>
                             <div className="text-xs text-gray-500">
-                              Qty: {item.quantity} × MWK {Number(item.price_at_purchase || 0).toFixed(2)}
+                              Qty: {item.quantity} × {formatCurrency(item.price_at_purchase || 0)}
                             </div>
                           </div>
                         </div>
                         <div className="font-medium">
-                          MWK {((Number(item.price_at_purchase || 0)) * item.quantity).toFixed(2)}
+                          {formatCurrency((Number(item.price_at_purchase || 0)) * item.quantity)}
                         </div>
                       </div>
                     ))
@@ -322,7 +334,7 @@ const AdminOrders = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Total Amount</span>
                     <span className="font-medium">
-                      MWK {orderItems.reduce((sum, item) => sum + ((Number(item.price_at_purchase || 0)) * item.quantity), 0).toFixed(2)}
+                      {formatCurrency(orderItems.reduce((sum, item) => sum + ((Number(item.price_at_purchase || 0)) * item.quantity), 0))}
                     </span>
                   </div>
                 </div>
