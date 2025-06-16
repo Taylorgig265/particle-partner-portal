@@ -9,5 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 // Helper function to format currency in MWK
 export const formatCurrency = (amount: number | string): string => {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return `MWK ${numAmount.toFixed(2)}`;
+  return `MWK ${numAmount.toLocaleString('en-MW', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  })}`;
 }

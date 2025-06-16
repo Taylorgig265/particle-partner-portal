@@ -51,7 +51,7 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="content-container py-24"> {/* Changed 'container' to 'content-container' */}
+    <div className="content-container py-24">
       <Button asChild variant="ghost" className="mb-8">
         <Link to="/products">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -92,7 +92,6 @@ const ProductDetail = () => {
                  dangerouslySetInnerHTML={{ __html: product.full_description }} />
           ) : (
             <div className="mt-8">
-              {/* Fallback if no full_description, could show regular description again or a message */}
               <p className="text-gray-700">{product.description || "No detailed description available."}</p>
             </div>
           )}
@@ -119,4 +118,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-

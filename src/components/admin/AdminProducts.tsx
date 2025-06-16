@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +15,7 @@ import {
   FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea'; // Textarea will be replaced for full_description
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -40,8 +41,17 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ReactQuill from 'react-quill'; // Import ReactQuill
-import 'react-quill/dist/quill.snow.css'; // Import Quill styles
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { formatCurrency } from '@/lib/utils';
+
+// Define allowed categories
+const ALLOWED_CATEGORIES = [
+  'Diagnostic Equipment',
+  'Laboratory and Scientific Instruments',
+  'Hospital and Healthcare Solutions',
+  'Industrial and Safety Equipment'
+] as const;
 
 // Form validation schema
 const formSchema = z.object({
@@ -49,11 +59,11 @@ const formSchema = z.object({
   description: z.string().optional(),
   full_description: z.string().optional(),
   price: z.coerce.number().min(0, { message: 'Price must be a positive number.' }),
-  category: z.string().optional(),
+  category: z.enum(ALLOWED_CATEGORIES, { message: 'Please select a valid category.' }),
   image_url: z.string().url({ message: 'Please enter a valid URL.' }).optional(),
   additional_images: z.string().optional(),
   in_stock: z.boolean().default(true),
-  is_featured: z.boolean().default(false).optional(), // Added is_featured
+  is_featured: z.boolean().default(false).optional(),
 });
 
 const AdminProducts = () => {
@@ -71,11 +81,11 @@ const AdminProducts = () => {
       description: '',
       full_description: '',
       price: 0,
-      category: '',
+      category: ALLOWED_CATEGORIES[0],
       image_url: '',
       additional_images: '',
       in_stock: true,
-      is_featured: false, // Default value for is_featured
+      is_featured: false,
     },
   });
 
@@ -86,19 +96,19 @@ const AdminProducts = () => {
         description: selectedProduct.description || '',
         full_description: selectedProduct.full_description || '',
         price: selectedProduct.price,
-        category: selectedProduct.category || '',
+        category: (selectedProduct.category as typeof ALLOWED_CATEGORIES[number]) || ALLOWED_CATEGORIES[0],
         image_url: selectedProduct.image_url || '',
         additional_images: (selectedProduct.additional_images || []).join(',') || '',
         in_stock: selectedProduct.in_stock !== false,
-        is_featured: selectedProduct.is_featured || false, // Set is_featured value
+        is_featured: selectedProduct.is_featured || false,
       });
     } else {
-      form.reset({ // Ensure reset includes is_featured for new products
+      form.reset({
         name: '',
         description: '',
         full_description: '',
         price: 0,
-        category: '',
+        category: ALLOWED_CATEGORIES[0],
         image_url: '',
         additional_images: '',
         in_stock: true,
@@ -119,7 +129,7 @@ const AdminProducts = () => {
         image_url: values.image_url,
         additional_images: values.additional_images ? values.additional_images.split(',') : [],
         in_stock: values.in_stock,
-        is_featured: values.is_featured || false, // Include is_featured
+        is_featured: values.is_featured || false,
       };
 
       if (isEditing && selectedProduct) {
@@ -200,14 +210,13 @@ const AdminProducts = () => {
       description: '',
       full_description: '', 
       price: 0,
-      category: '',
+      category: ALLOWED_CATEGORIES[0],
       image_url: '',
       additional_images: '',
       in_stock: true,
-      is_featured: false, // Reset is_featured for new product
+      is_featured: false,
     });
   };
-
 
   return (
     <div>
@@ -237,7 +246,7 @@ const AdminProducts = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>In Stock</TableHead>
-                <TableHead>Featured</TableHead> {/* Added Featured column */}
+                <TableHead>Featured</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -246,10 +255,10 @@ const AdminProducts = () => {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.description}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{formatCurrency(product.price)}</TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.in_stock ? 'Yes' : 'No'}</TableCell>
-                  <TableCell>{product.is_featured ? 'Yes' : 'No'}</TableCell> {/* Display Featured status */}
+                  <TableCell>{product.is_featured ? 'Yes' : 'No'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -344,7 +353,7 @@ const AdminProducts = () => {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price</FormLabel>
+                      <FormLabel>Price (MWK)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0.00" {...field} />
                       </FormControl>
@@ -358,9 +367,20 @@ const AdminProducts = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Category" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ALLOWED_CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

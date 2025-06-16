@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useProducts, Product } from '@/services/product-service';
 import { useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 const ProductsPreview = () => {
   const { products, loading, error } = useProducts();
@@ -30,9 +31,9 @@ const ProductsPreview = () => {
     // Fallback images based on category
     const categoryImages: Record<string, string> = {
       'Diagnostic Equipment': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      'Laboratory Equipment': 'https://images.unsplash.com/photo-1579165466949-3180a3d056d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      'Healthcare Equipment': 'https://images.unsplash.com/photo-1576671114140-525049b9291b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      'Industrial Equipment': 'https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      'Laboratory and Scientific Instruments': 'https://images.unsplash.com/photo-1579165466949-3180a3d056d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'Hospital and Healthcare Solutions': 'https://images.unsplash.com/photo-1576671114140-525049b9291b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'Industrial and Safety Equipment': 'https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     };
     
     return categoryImages[product.category || ''] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
@@ -41,9 +42,9 @@ const ProductsPreview = () => {
   const getCategoryColor = (categoryName?: string) => {
     const categoryColors: Record<string, string> = {
       'Diagnostic Equipment': 'from-blue-500/20 to-blue-600/20',
-      'Laboratory Equipment': 'from-green-500/20 to-green-600/20',
-      'Healthcare Equipment': 'from-red-500/20 to-red-600/20',
-      'Industrial Equipment': 'from-yellow-500/20 to-yellow-600/20'
+      'Laboratory and Scientific Instruments': 'from-green-500/20 to-green-600/20',
+      'Hospital and Healthcare Solutions': 'from-red-500/20 to-red-600/20',
+      'Industrial and Safety Equipment': 'from-yellow-500/20 to-yellow-600/20'
     };
     
     return categoryColors[categoryName || ''] || 'from-blue-500/20 to-blue-600/20';
@@ -152,7 +153,7 @@ const ProductsPreview = () => {
                       </p>
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-2xl font-bold text-particle-navy">
-                          ${product.price.toFixed(2)}
+                          {formatCurrency(product.price)}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           product.in_stock !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
