@@ -1,27 +1,11 @@
+
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useProducts, Product } from '@/services/product-service'; // Import Product interface
+import { useProducts, Product } from '@/services/product-service';
 import { useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-
-// Mapping for category colors
-const categoryColors: Record<string, string> = {
-  'Diagnostic Equipment': 'from-blue-500/20 to-blue-600/20',
-  'Laboratory Equipment': 'from-green-500/20 to-green-600/20',
-  'Healthcare Equipment': 'from-red-500/20 to-red-600/20',
-  'Industrial Equipment': 'from-yellow-500/20 to-yellow-600/20'
-};
-
-// Fallback images for categories
-const categoryImages: Record<string, string> = {
-  'Diagnostic Equipment': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Laboratory Equipment': 'https://images.unsplash.com/photo-1579165466949-3180a3d056d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Healthcare Equipment': 'https://images.unsplash.com/photo-1576671114140-525049b9291b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Industrial Equipment': 'https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-};
-
 
 const ProductsPreview = () => {
   const { products, loading, error } = useProducts();
@@ -37,46 +21,33 @@ const ProductsPreview = () => {
     }
   }, [error, toast]);
 
-  // Filter for featured products
-  const featuredProducts = products.filter(product => product.is_featured);
+  // Filter for featured products and limit to 4
+  const featuredProducts = products.filter(product => product.is_featured).slice(0, 4);
 
-  // Group featured products by category
-  const productsByCategory = featuredProducts.reduce((acc, product) => {
-    if (!product.category) return acc;
+  const getProductImage = (product: Product) => {
+    if (product.image_url) return product.image_url;
     
-    if (!acc[product.category]) {
-      acc[product.category] = {
-        name: product.category,
-        products: [] as Product[] // Ensure products array is typed
-      };
-    }
+    // Fallback images based on category
+    const categoryImages: Record<string, string> = {
+      'Diagnostic Equipment': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'Laboratory Equipment': 'https://images.unsplash.com/photo-1579165466949-3180a3d056d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'Healthcare Equipment': 'https://images.unsplash.com/photo-1576671114140-525049b9291b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'Industrial Equipment': 'https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    };
     
-    acc[product.category].products.push(product);
-    return acc;
-  }, {} as Record<string, { name: string, products: Product[] }>);
-  
-  // Convert to array for easier rendering
-  const categories = Object.values(productsByCategory);
-
-  // Get a representative image for each category (from featured products)
-  const getCategoryImage = (categoryName: string, categoryProducts: Product[]) => {
-    if (!categoryProducts || categoryProducts.length === 0) {
-      return categoryImages[categoryName] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-    }
-    
-    const productWithImage = categoryProducts.find(p => p.image_url);
-    if (productWithImage) return productWithImage.image_url;
-    
-    return categoryImages[categoryName] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+    return categoryImages[product.category || ''] || 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
   };
 
-  const getCategoryColor = (categoryName: string) => {
-    return categoryColors[categoryName] || 'from-blue-500/20 to-blue-600/20';
+  const getCategoryColor = (categoryName?: string) => {
+    const categoryColors: Record<string, string> = {
+      'Diagnostic Equipment': 'from-blue-500/20 to-blue-600/20',
+      'Laboratory Equipment': 'from-green-500/20 to-green-600/20',
+      'Healthcare Equipment': 'from-red-500/20 to-red-600/20',
+      'Industrial Equipment': 'from-yellow-500/20 to-yellow-600/20'
+    };
+    
+    return categoryColors[categoryName || ''] || 'from-blue-500/20 to-blue-600/20';
   };
-
-
-  // Display up to 4 categories of featured products
-  const displayCategories = categories.slice(0, 4);
 
   return (
     <section className="py-24 bg-particle-light/50 relative overflow-hidden">
@@ -102,7 +73,7 @@ const ProductsPreview = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Explore Our Featured Equipment
+            Featured Equipment
           </motion.h2>
           
           <motion.p 
@@ -123,7 +94,7 @@ const ProductsPreview = () => {
           </div>
         ) : error ? (
           <div className="text-center py-16">
-            <p className="text-red-500 mb-4">Unable to load product categories</p>
+            <p className="text-red-500 mb-4">Unable to load featured products</p>
             <Button 
               onClick={() => window.location.reload()}
               variant="outline"
@@ -131,7 +102,7 @@ const ProductsPreview = () => {
               Try Again
             </Button>
           </div>
-        ) : displayCategories.length === 0 ? (
+        ) : featuredProducts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-600">No featured products available at the moment.</p>
           </div>
@@ -143,24 +114,24 @@ const ProductsPreview = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            {displayCategories.map((category, index) => (
+            {featuredProducts.map((product, index) => (
               <motion.div
-                key={category.name}
+                key={product.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Link 
-                  to={`/products#${category.name}`} // Link still goes to the full category page
+                  to={`/products/${product.id}`}
                   className="block h-full"
                 >
                   <div className="h-full rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 card-hover group">
                     <div className="h-48 relative overflow-hidden">
-                      <div className={`absolute inset-0 bg-gradient-to-br ${getCategoryColor(category.name)} opacity-30 group-hover:opacity-20 transition-opacity`}></div>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${getCategoryColor(product.category)} opacity-30 group-hover:opacity-20 transition-opacity`}></div>
                       <img 
-                        src={getCategoryImage(category.name, category.products)} 
-                        alt={category.name} 
+                        src={getProductImage(product)} 
+                        alt={product.name} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -168,16 +139,29 @@ const ProductsPreview = () => {
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                      <h3 className="absolute bottom-4 left-4 text-xl font-semibold text-white">{category.name}</h3>
+                      {product.category && (
+                        <div className="absolute top-4 left-4 px-2 py-1 bg-white/90 rounded-full text-xs font-medium text-particle-navy">
+                          {product.category}
+                        </div>
+                      )}
+                      <h3 className="absolute bottom-4 left-4 text-xl font-semibold text-white pr-4">{product.name}</h3>
                     </div>
                     <div className="p-6">
-                      <p className="text-gray-600 mb-4">
-                        {category.products && category.products.length > 0
-                          ? `${category.products.length} featured product${category.products.length === 1 ? '' : 's'} in this category`
-                          : "Explore our offerings in this category"}
+                      <p className="text-gray-600 mb-4 line-clamp-2">
+                        {product.description || "Premium quality equipment with expert support and warranty."}
                       </p>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-2xl font-bold text-particle-navy">
+                          ${product.price.toFixed(2)}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          product.in_stock !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.in_stock !== false ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                      </div>
                       <div className="flex items-center text-particle-navy font-medium group-hover:text-particle-accent transition-colors">
-                        Explore {category.name}
+                        View Details
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </div>
                     </div>
