@@ -1,32 +1,15 @@
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useQuoteRequest } from '@/services/product-service';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-
-// Form validation schema
-const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  phone: z.string().min(6, { message: 'Please enter a valid phone number.' }),
-  company: z.string().optional(),
-  quantity: z.coerce.number().min(1, { message: 'Quantity must be at least 1.' }),
-  message: z.string().optional(),
-});
+import { Send } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuoteRequestFormProps {
   productId: string;
@@ -34,241 +17,137 @@ interface QuoteRequestFormProps {
   onSuccess?: () => void;
 }
 
-const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { submitQuoteRequest } = useQuoteRequest();
-  const { toast } = useToast();
+const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({ 
+  productId, 
+  productName, 
+  onSuccess 
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      quantity: 1,
-      message: `I'm interested in the ${productName} and would like to request a quote.`,
-    },
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    quantity: 1,
+    message: ''
   });
 
-  // Check if user is authenticated
+  // Redirect to auth if not logged in
   useEffect(() => {
     if (!user) {
       toast({
-        title: "Authentication Required",
+        title: "Authentication required",
         description: "Please sign in to request a quote.",
         variant: "destructive"
       });
       navigate('/auth');
-      return;
     }
+  }, [user, navigate, toast]);
 
-    // Pre-fill form with user data if available
-    const fetchUserProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-        if (data) {
-          form.reset({
-            name: data.name || '',
-            email: data.email || user.email || '',
-            phone: data.phone || '',
-            company: data.company || '',
-            quantity: 1,
-            message: `I'm interested in the ${productName} and would like to request a quote.`,
-          });
-        } else {
-          form.reset({
-            name: user.user_metadata?.name || '',
-            email: user.email || '',
-            phone: '',
-            company: '',
-            quantity: 1,
-            message: `I'm interested in the ${productName} and would like to request a quote.`,
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user, productName, form, toast, navigate]);
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to request a quote.",
-        variant: "destructive"
-      });
       navigate('/auth');
       return;
     }
 
-    setIsSubmitting(true);
+    setIsLoading(true);
+
     try {
-      console.log("Submitting form with values:", values);
-      await submitQuoteRequest(
-        productId,
-        values.quantity,
-        {
-          name: values.name,
-          email: values.email,
-          phone: values.phone,
-          company: values.company || '',
-          message: values.message || '',
-        }
-      );
-      
-      toast({
-        title: "Quote Request Submitted",
-        description: "Thank you! We'll get back to you with a quote soon. You can track your request in your dashboard.",
-        action: (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/dashboard')}
-          >
-            View Dashboard
-          </Button>
-        )
+      const { data, error } = await supabase.rpc('submit_quote_request', {
+        product_id: productId,
+        quantity: formData.quantity,
+        message: formData.message
       });
-      
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Quote request submitted",
+        description: "We'll get back to you with a quote soon!",
+      });
+
+      // Reset form
+      setFormData({
+        quantity: 1,
+        message: ''
+      });
+
       if (onSuccess) {
         onSuccess();
       }
-      
-      form.reset();
-    } catch (error: any) {
-      console.error('Error submitting quote request:', error);
+    } catch (error) {
+      console.error('Quote request error:', error);
       toast({
-        title: "Error",
-        description: error.message || "There was a problem submitting your quote request. Please try again.",
-        variant: "destructive"
+        title: "Request failed",
+        description: "Failed to submit quote request. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
+  // Don't render if user is not authenticated
   if (!user) {
     return null;
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name*</FormLabel>
-                <FormControl>
-                  <Input placeholder="John Doe" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email*</FormLabel>
-                <FormControl>
-                  <Input placeholder="john@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Request Quote for {productName}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={formData.quantity}
+              onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+              required
+            />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number*</FormLabel>
-                <FormControl>
-                  <Input placeholder="+1 (555) 123-4567" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          <div>
+            <Label htmlFor="message">Additional Message (Optional)</Label>
+            <Textarea
+              id="message"
+              value={formData.message}
+              onChange={(e) => handleInputChange('message', e.target.value)}
+              placeholder="Any specific requirements or questions..."
+              rows={4}
+            />
+          </div>
+
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                Submitting...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Submit Quote Request
+              </span>
             )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="company"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company/Organization</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your Company (Optional)" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="quantity"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Quantity*</FormLabel>
-              <FormControl>
-                <Input type="number" min="1" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="message"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Additional Information</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Include any specific requirements or questions you have about the product."
-                  className="min-h-[120px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            'Submit Quote Request'
-          )}
-        </Button>
-      </form>
-    </Form>
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

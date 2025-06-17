@@ -18,7 +18,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { recordPageVisit } from '@/services/visitor-service';
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
 import { AuthProvider } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminAuthGuard from '@/components/AdminAuthGuard';
+import CustomerAuthGuard from '@/components/CustomerAuthGuard';
 import './App.css';
 
 // Component to track page views
@@ -65,11 +66,15 @@ function App() {
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/gallery/project/:projectId" element={<ProjectGalleryPage />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<CustomerDashboard />} />
+              <Route path="/dashboard" element={
+                <CustomerAuthGuard>
+                  <CustomerDashboard />
+                </CustomerAuthGuard>
+              } />
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <AdminAuthGuard>
                   <Admin />
-                </ProtectedRoute>
+                </AdminAuthGuard>
               } />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="*" element={<NotFound />} />

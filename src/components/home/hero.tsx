@@ -1,112 +1,162 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ArrowRight, Shield, Leaf, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const Hero = () => {
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const heroElement = document.querySelector('.hero-section') as HTMLElement;
-      if (!heroElement) return;
-      
-      const { clientX, clientY } = e;
-      const { left, top, width, height } = heroElement.getBoundingClientRect();
-      
-      const x = (clientX - left) / width;
-      const y = (clientY - top) / height;
-      
-      heroElement.style.setProperty('--mouse-x', `${x}`);
-      heroElement.style.setProperty('--mouse-y', `${y}`);
-    };
-    
-    window.addEventListener('mousemove', handleMouseMove);
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-  
-  return (
-    <section 
-      className="hero-section relative min-h-[90vh] flex items-center overflow-hidden bg-particle-light" 
-      style={{
-        backgroundImage: `radial-gradient(
-          circle at calc(var(--mouse-x, 0.5) * 100%) calc(var(--mouse-y, 0.5) * 100%), 
-          rgba(212, 175, 55, 0.15), 
-          rgba(10, 35, 66, 0.05) 40%
-        )`
-      }}
-    >
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-[10%] -right-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-particle-navy/5 to-particle-accent/5 blur-3xl" />
-        <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tr from-particle-navy/5 to-particle-accent/5 blur-3xl" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0icmdiYSgxMCwgMzUsIDY2LCAwLjA1KSIvPjwvZz48L3N2Zz4=')] opacity-10" />
-      </div>
+  const [imageError, setImageError] = useState(false);
 
-      <div className="content-container relative z-10 w-full py-12">
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-6 text-center" // Added text-center
-            >
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-particle-navy/5 text-particle-navy border border-particle-navy/10">
-                <span className="h-2 w-2 rounded-full bg-particle-accent animate-pulse mr-2"></span>
-                <span className="text-sm font-medium">Trusted Medical Equipment Supplier</span>
-              </div>
-              
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-particle-navy animate-fade-in-down">
-                Your Partner in <br />
-                <span className="text-particle-secondary relative inline-block">
-                  Medical Supplies
-                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-particle-accent rounded-full transform origin-left animate-slide-in-right" style={{ animationDelay: '0.5s' }}></span>
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 py-20 lg:py-32">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-white/50 backdrop-blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10"></div>
+      
+      <div className="container relative mx-auto px-4">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Content */}
+          <motion.div 
+            className="space-y-8"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="space-y-4">
+              <motion.div 
+                className="inline-block"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                  Sustainable Building Solutions
                 </span>
-              </h1>
+              </motion.div>
+              
+              <motion.h1 
+                className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Building a{' '}
+                <span className="text-green-600">Greener</span> Future
+              </motion.h1>
               
               <motion.p 
-                className="text-lg text-gray-600 max-w-xl mx-auto" // Added mx-auto
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
+                className="text-xl text-gray-600 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
               >
-                Particle Investment is a trusted supplier of diagnostic and medical equipment in Malawi, 
-                with over a decade of experience delivering quality products and exceptional service.
+                Transform your construction projects with our eco-friendly materials and sustainable building solutions. 
+                Quality, durability, and environmental responsibility in every product.
               </motion.p>
-              
-              <motion.div 
-                className="flex flex-col items-center sm:flex-row sm:justify-center gap-4 pt-4" // Added items-center and sm:justify-center
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-              >
-                <Button 
-                  className="bg-particle-navy hover:bg-particle-secondary text-white btn-animation" 
-                  size="lg"
-                  asChild
-                >
-                  <Link to="/products">
-                    Explore Our Products
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="border-particle-navy text-particle-navy hover:bg-particle-navy hover:text-white"
-                  size="lg"
-                  asChild
-                >
-                  <Link to="/contact">
-                    Contact Us
-                  </Link>
-                </Button>
-              </motion.div>
+            </div>
+
+            {/* Features */}
+            <motion.div 
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Shield className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">Certified Quality</span>
+              </div>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Leaf className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">100% Eco-Friendly</span>
+              </div>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Award className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">Industry Leading</span>
+              </div>
             </motion.div>
-          </div>
+
+            {/* CTA Buttons */}
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button asChild size="lg" className="bg-green-600 hover:bg-green-700">
+                <Link to="/products">
+                  Explore Products
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/contact">
+                  Get Quote
+                </Link>
+              </Button>
+            </motion.div>
+
+            {/* Trusted by section */}
+            <motion.div 
+              className="pt-8 border-t border-gray-200"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <p className="text-sm text-gray-500 mb-4">Trusted by leading companies</p>
+              <div className="flex items-center space-x-8 opacity-60">
+                {/* Particle Investment Logo */}
+                {!imageError ? (
+                  <img 
+                    src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
+                    alt="Particle Investment" 
+                    className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                    onError={handleImageError}
+                  />
+                ) : (
+                  <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
+                    Particle Investment
+                  </div>
+                )}
+                
+                {/* Placeholder logos */}
+                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
+                  GreenTech Corp
+                </div>
+                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
+                  BuildSmart
+                </div>
+                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
+                  EcoConstruct
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Hero Image */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div className="relative z-10">
+              <img
+                src="/lovable-uploads/154c26f2-62ad-43fd-b3a5-7f07b92f3766.png"
+                alt="Sustainable Construction"
+                className="w-full h-auto rounded-2xl shadow-2xl"
+                loading="eager"
+              />
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute -top-4 -right-4 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+            <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+          </motion.div>
         </div>
       </div>
     </section>

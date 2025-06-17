@@ -1,133 +1,92 @@
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, Save } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { User, Save } from 'lucide-react';
 
-const profileSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  billing_address: z.string().optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
+interface BillingAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
 
 const ProfileSettings = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const { user, updateProfile } = useAuth();
   const { toast } = useToast();
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      billing_address: "",
-    },
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    company: '',
+    billingAddress: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'United States'
+    } as BillingAddress
   });
 
   useEffect(() => {
     if (user) {
-      fetchProfile();
+      // Load existing profile data if available
+      setFormData(prev => ({
+        ...prev,
+        name: user.user_metadata?.name || '',
+      }));
     }
   }, [user]);
 
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-
-      if (data) {
-        setProfile(data);
-        form.reset({
-          name: data.name || "",
-          email: data.email || user?.email || "",
-          phone: data.phone || "",
-          company: data.company || "",
-          billing_address: typeof data.billing_address === 'object' 
-            ? JSON.stringify(data.billing_address, null, 2) 
-            : data.billing_address || "",
-        });
-      } else {
-        // No profile exists, use user data
-        form.reset({
-          name: user?.user_metadata?.name || "",
-          email: user?.email || "",
-          phone: "",
-          company: "",
-          billing_address: "",
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const onSubmit = async (values: ProfileFormValues) => {
-    setIsLoading(true);
-    try {
-      let billingAddress = null;
-      if (values.billing_address) {
-        try {
-          billingAddress = JSON.parse(values.billing_address);
-        } catch {
-          billingAddress = values.billing_address;
-        }
+  const handleAddressChange = (field: keyof BillingAddress, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      billingAddress: {
+        ...prev.billingAddress,
+        [field]: value
       }
+    }));
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
       const { success, error } = await updateProfile({
-        name: values.name,
-        phone: values.phone || null,
-        company: values.company || null,
-        billing_address: billingAddress,
+        name: formData.name,
+        phone: formData.phone,
+        company: formData.company,
+        billing_address: formData.billingAddress,
       });
 
       if (success) {
         toast({
-          title: "Profile Updated",
-          description: "Your profile has been updated successfully.",
+          title: "Profile updated",
+          description: "Your profile has been successfully updated.",
         });
-        fetchProfile(); // Refresh profile data
       } else {
         toast({
-          title: "Update Failed",
+          title: "Update failed",
           description: error || "Failed to update profile. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
       toast({
-        title: "Update Failed",
+        title: "Update failed",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
@@ -139,104 +98,100 @@ const ProfileSettings = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile Settings</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Profile Settings
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name*</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email*</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter your full name"
               />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1 (555) 123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company/Organization</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your Company" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="Enter your phone number"
               />
             </div>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="billing_address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Billing Address</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter your billing address as JSON or plain text"
-                      className="min-h-[120px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div>
+            <Label htmlFor="company">Company (Optional)</Label>
+            <Input
+              id="company"
+              value={formData.company}
+              onChange={(e) => handleInputChange('company', e.target.value)}
+              placeholder="Enter your company name"
             />
+          </div>
 
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Profile
-                </>
-              )}
-            </Button>
-          </form>
-        </Form>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Billing Address</h3>
+            <div>
+              <Label htmlFor="street">Street Address</Label>
+              <Input
+                id="street"
+                value={formData.billingAddress.street}
+                onChange={(e) => handleAddressChange('street', e.target.value)}
+                placeholder="Enter street address"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.billingAddress.city}
+                  onChange={(e) => handleAddressChange('city', e.target.value)}
+                  placeholder="Enter city"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={formData.billingAddress.state}
+                  onChange={(e) => handleAddressChange('state', e.target.value)}
+                  placeholder="Enter state"
+                />
+              </div>
+              <div>
+                <Label htmlFor="zipCode">ZIP Code</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.billingAddress.zipCode}
+                  onChange={(e) => handleAddressChange('zipCode', e.target.value)}
+                  placeholder="Enter ZIP code"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                Updating...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                Update Profile
+              </span>
+            )}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
