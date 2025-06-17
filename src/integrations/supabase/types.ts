@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_super_admin: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_super_admin?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_super_admin?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gallery: {
         Row: {
           created_at: string
@@ -178,26 +199,35 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          billing_address: Json | null
+          company: string | null
           created_at: string
           email: string | null
           id: string
           name: string | null
+          phone: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          billing_address?: Json | null
+          company?: string | null
           created_at?: string
           email?: string | null
           id: string
           name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          billing_address?: Json | null
+          company?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -228,40 +258,55 @@ export type Database = {
       }
       quotes: {
         Row: {
+          admin_notes: string | null
           company: string | null
           created_at: string
           email: string
+          expires_at: string | null
           id: string
           message: string | null
           name: string
           phone: string
           product_id: string
           quantity: number
+          quoted_at: string | null
+          quoted_price: number | null
           status: string | null
+          user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           company?: string | null
           created_at?: string
           email: string
+          expires_at?: string | null
           id?: string
           message?: string | null
           name: string
           phone: string
           product_id: string
           quantity: number
+          quoted_at?: string | null
+          quoted_price?: number | null
           status?: string | null
+          user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           company?: string | null
           created_at?: string
           email?: string
+          expires_at?: string | null
           id?: string
           message?: string | null
           name?: string
           phone?: string
           product_id?: string
           quantity?: number
+          quoted_at?: string | null
+          quoted_price?: number | null
           status?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -303,16 +348,18 @@ export type Database = {
     }
     Functions: {
       submit_quote_request: {
-        Args: {
-          product_id: string
-          quantity: number
-          name: string
-          email: string
-          phone: string
-          company: string
-          message: string
-        }
-        Returns: boolean
+        Args:
+          | { product_id: string; quantity: number; message?: string }
+          | {
+              product_id: string
+              quantity: number
+              name: string
+              email: string
+              phone: string
+              company: string
+              message: string
+            }
+        Returns: string
       }
       update_order_status: {
         Args: { order_id_param: string; new_status: string }

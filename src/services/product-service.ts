@@ -335,19 +335,19 @@ export const useQuoteRequest = () => {
     }
   ) => {
     try {
-      const quoteRequest = {
-        product_id: productId,
-        quantity: quantity,
-        name: contactInfo.name,
-        email: contactInfo.email,
-        phone: contactInfo.phone,
-        company: contactInfo.company,
-        message: contactInfo.message
-      };
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to submit a quote request');
+      }
 
       const { data, error } = await supabase.rpc(
         'submit_quote_request', 
-        quoteRequest
+        {
+          product_id: productId,
+          quantity: quantity,
+          message: contactInfo.message
+        }
       );
 
       if (error) throw error;
@@ -356,7 +356,7 @@ export const useQuoteRequest = () => {
       console.error('Error submitting quote request:', error);
       throw error;
     }
-  }, []); // No dependencies that change
+  }, []);
 
   return { submitQuoteRequest };
 };

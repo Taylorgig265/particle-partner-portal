@@ -38,6 +38,8 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submitQuoteRequest } = useQuoteRequest();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +53,65 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
     },
   });
 
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to request a quote.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
+    // Pre-fill form with user data if available
+    const fetchUserProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (data) {
+          form.reset({
+            name: data.name || '',
+            email: data.email || user.email || '',
+            phone: data.phone || '',
+            company: data.company || '',
+            quantity: 1,
+            message: `I'm interested in the ${productName} and would like to request a quote.`,
+          });
+        } else {
+          form.reset({
+            name: user.user_metadata?.name || '',
+            email: user.email || '',
+            phone: '',
+            company: '',
+            quantity: 1,
+            message: `I'm interested in the ${productName} and would like to request a quote.`,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, productName, form, toast, navigate]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to request a quote.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       console.log("Submitting form with values:", values);
@@ -69,7 +129,16 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
       
       toast({
         title: "Quote Request Submitted",
-        description: "Thank you! We'll get back to you with a quote soon.",
+        description: "Thank you! We'll get back to you with a quote soon. You can track your request in your dashboard.",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/dashboard')}
+          >
+            View Dashboard
+          </Button>
+        )
       });
       
       if (onSuccess) {
@@ -88,6 +157,10 @@ const QuoteRequestForm = ({ productId, productName, onSuccess }: QuoteRequestFor
       setIsSubmitting(false);
     }
   };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Form {...form}>

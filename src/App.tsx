@@ -8,13 +8,16 @@ import Contact from '@/pages/Contact';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import Gallery from '@/pages/Gallery';
-import ProjectGalleryPage from '@/pages/ProjectGalleryPage'; // Added import
+import ProjectGalleryPage from '@/pages/ProjectGalleryPage';
 import Admin from '@/pages/Admin';
 import AdminLogin from '@/pages/AdminLogin';
+import Auth from '@/pages/Auth';
+import CustomerDashboard from '@/pages/CustomerDashboard';
 import NotFound from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 import { recordPageVisit } from '@/services/visitor-service';
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import './App.css';
 
@@ -48,32 +51,35 @@ const PageTracker = () => {
 
 function App() {
   return (
-    <AdminAuthProvider>
-      <Router>
-        <PageTracker />
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/gallery/project/:projectId" element={<ProjectGalleryPage />} /> {/* Added route */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AnimatePresence>
-        <Toaster />
-      </Router>
-    </AdminAuthProvider>
+    <AuthProvider>
+      <AdminAuthProvider>
+        <Router>
+          <PageTracker />
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/gallery" element={<Gallery />} />
+              <Route path="/gallery/project/:projectId" element={<ProjectGalleryPage />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<CustomerDashboard />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
+          <Toaster />
+        </Router>
+      </AdminAuthProvider>
+    </AuthProvider>
   );
 }
 
 export default App;
-

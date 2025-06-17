@@ -1,153 +1,158 @@
 
-import { Link } from "react-router-dom";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Home, X, Menu, FileText, Settings, Image } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import QuoteRequestDialog from "@/components/QuoteRequestDialog";
-
-interface NavItem {
-  title: string;
-  href: string;
-  icon?: JSX.Element;
-}
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false);
-  
-  const navItems: NavItem[] = [
-    { title: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
-    { title: "Products", href: "/products" },
-    { title: "Gallery", href: "/gallery", icon: <Image className="h-5 w-5" /> },
-    { title: "About", href: "/about" },
-    { title: "Contact", href: "/contact" },
-    { title: "Admin", href: "/admin", icon: <Settings className="h-5 w-5" /> },
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+
+  const navigation = [
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    { name: "Products", href: "/products" },
+    { name: "Gallery", href: "/gallery" },
+    { name: "Contact", href: "/contact" },
   ];
 
+  const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
-    <div className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex gap-2 md:gap-10">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
-              alt="Particle Investment Logo" 
-              className="h-10 w-auto" 
-            />
-          </Link>
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Link to="/" className="text-xl font-bold text-gray-800">
+              EcoBuild Solutions
+            </Link>
+          </div>
 
-          <nav className="hidden gap-6 md:flex">
-            {navItems.map(
-              (item, index) =>
-                // Hide the Admin link from the main desktop nav items
-                item.href !== "/admin" && (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "flex items-center text-sm font-medium transition-colors hover:text-foreground/80"
-                    )}
-                  >
-                    {item.title}
-                  </Link>
-                )
-            )}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link to="/admin" className="hidden md:flex">
-            <Button variant="outline" size="icon">
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Admin</span>
-            </Button>
-          </Link>
-
-          <QuoteRequestDialog 
-            trigger={
-              <Button variant="outline" className="hidden md:flex">
-                <FileText className="mr-2 h-5 w-5" />
-                Request a Quote
-              </Button>
-            }
-          />
-
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="flex md:hidden"
-                aria-label="Toggle Menu"
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "text-green-600 border-b-2 border-green-600 pb-1"
+                    : "text-gray-700 hover:text-green-600"
+                }`}
               >
-                <Menu className="h-5 w-5" />
+                {item.name}
+              </Link>
+            ))}
+            
+            {/* User Menu */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden lg:inline">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/auth">Sign In</Link>
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="pr-0">
-              <SheetHeader>
-                <SheetTitle asChild>
-                  <Link
-                    to="/"
-                    className="flex items-center"
-                    onClick={() => setOpen(false)}
-                  >
-                    <img 
-                      src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
-                      alt="Particle Investment Logo" 
-                      className="h-10 w-auto" 
-                    />
-                  </Link>
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="grid gap-2 py-6">
-                {navItems.map((item, index) => (
-                  <div key={item.href}>
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className="flex items-center gap-2 py-2 text-lg font-semibold"
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.icon}
-                      {item.title}
-                    </Link>
-                    {/* Add separator for all items except the last one in the sheet menu */}
-                    {index < navItems.length -1 && (
-                      <Separator className="mt-2" />
-                    )}
-                  </div>
-                ))}
-                {/* Ensure "Request a Quote" is separated in the mobile menu */}
-                <Separator className="mt-2" />
-                <div>
-                  <QuoteRequestDialog 
-                    trigger={
-                      <button
-                        className="flex items-center gap-2 py-2 text-lg font-semibold w-full text-left"
-                        onClick={() => { setOpen(false); }}
-                      >
-                        <FileText className="h-5 w-5" />
-                        Request a Quote
-                      </button>
-                    }
-                  />
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`block px-3 py-2 text-base font-medium transition-colors ${
+                    isActive(item.href)
+                      ? "text-green-600 bg-green-50"
+                      : "text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              
+              {/* Mobile User Menu */}
+              <div className="border-t pt-2">
+                {user ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleSignOut();
+                        setIsOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/auth"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </nav>
   );
 };
 
 export default Navbar;
-
