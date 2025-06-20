@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Shield, Leaf, Award } from 'lucide-react';
+import { ArrowRight, TrendingUp, DollarSign, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -13,10 +13,10 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 py-20 lg:py-32">
+    <section className="relative overflow-hidden bg-gradient-to-br from-particle-light to-particle-gray py-20 lg:py-32">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-white/50 backdrop-blur-3xl"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-particle-navy/10 to-particle-secondary/10"></div>
       
       <div className="container relative mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -34,29 +34,29 @@ const Hero = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                  Sustainable Building Solutions
+                <span className="bg-particle-gold/20 text-particle-navy text-sm font-medium px-3 py-1 rounded-full">
+                  Strategic Investment Solutions
                 </span>
               </motion.div>
               
               <motion.h1 
-                className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight"
+                className="text-4xl lg:text-6xl font-bold text-particle-navy leading-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                Building a{' '}
-                <span className="text-green-600">Greener</span> Future
+                Unlock Your{' '}
+                <span className="text-particle-gold">Investment</span> Potential
               </motion.h1>
               
               <motion.p 
-                className="text-xl text-gray-600 leading-relaxed"
+                className="text-xl text-particle-secondary leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                Transform your construction projects with our eco-friendly materials and sustainable building solutions. 
-                Quality, durability, and environmental responsibility in every product.
+                Partner with Particle Investment to access premium opportunities and strategic insights. 
+                We deliver tailored investment solutions designed to maximize your portfolio performance.
               </motion.p>
             </div>
 
@@ -67,17 +67,17 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="flex items-center space-x-2 text-gray-700">
-                <Shield className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">Certified Quality</span>
+              <div className="flex items-center space-x-2 text-particle-navy">
+                <TrendingUp className="h-5 w-5 text-particle-gold" />
+                <span className="text-sm font-medium">Growth Focused</span>
               </div>
-              <div className="flex items-center space-x-2 text-gray-700">
-                <Leaf className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">100% Eco-Friendly</span>
+              <div className="flex items-center space-x-2 text-particle-navy">
+                <DollarSign className="h-5 w-5 text-particle-gold" />
+                <span className="text-sm font-medium">Premium Returns</span>
               </div>
-              <div className="flex items-center space-x-2 text-gray-700">
-                <Award className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">Industry Leading</span>
+              <div className="flex items-center space-x-2 text-particle-navy">
+                <Target className="h-5 w-5 text-particle-gold" />
+                <span className="text-sm font-medium">Strategic Insights</span>
               </div>
             </motion.div>
 
@@ -88,51 +88,44 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Button asChild size="lg" className="bg-green-600 hover:bg-green-700">
+              <Button asChild size="lg" className="bg-particle-gold hover:bg-particle-accent text-particle-navy">
                 <Link to="/products">
-                  Explore Products
+                  Explore Opportunities
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="border-particle-navy text-particle-navy hover:bg-particle-navy hover:text-white">
                 <Link to="/contact">
-                  Get Quote
+                  Schedule Consultation
                 </Link>
               </Button>
             </motion.div>
 
-            {/* Trusted by section */}
+            {/* Particle Investment branding */}
             <motion.div 
-              className="pt-8 border-t border-gray-200"
+              className="pt-8 border-t border-particle-navy/20"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
             >
-              <p className="text-sm text-gray-500 mb-4">Trusted by leading companies</p>
-              <div className="flex items-center space-x-8 opacity-60">
+              <div className="flex items-center space-x-4">
                 {/* Particle Investment Logo */}
                 {!imageError ? (
                   <img 
                     src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
                     alt="Particle Investment" 
-                    className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                    className="h-12 object-contain"
                     onError={handleImageError}
                   />
                 ) : (
-                  <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
+                  <div className="h-12 px-6 flex items-center text-particle-navy text-lg font-bold border border-particle-gold rounded">
                     Particle Investment
                   </div>
                 )}
                 
-                {/* Placeholder logos */}
-                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
-                  GreenTech Corp
-                </div>
-                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
-                  BuildSmart
-                </div>
-                <div className="h-8 px-4 flex items-center text-gray-400 text-sm font-medium border border-gray-200 rounded">
-                  EcoConstruct
+                <div className="space-y-1">
+                  <p className="text-particle-navy font-semibold">Particle Investment</p>
+                  <p className="text-sm text-particle-secondary">Building Wealth Through Strategic Partnerships</p>
                 </div>
               </div>
             </motion.div>
@@ -147,15 +140,15 @@ const Hero = () => {
           >
             <div className="relative z-10">
               <img
-                src="/lovable-uploads/154c26f2-62ad-43fd-b3a5-7f07b92f3766.png"
-                alt="Sustainable Construction"
+                src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop&crop=center"
+                alt="Investment Strategy and Financial Growth"
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 loading="eager"
               />
             </div>
             {/* Decorative elements */}
-            <div className="absolute -top-4 -right-4 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+            <div className="absolute -top-4 -right-4 w-72 h-72 bg-particle-gold/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+            <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-particle-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
           </motion.div>
         </div>
       </div>
