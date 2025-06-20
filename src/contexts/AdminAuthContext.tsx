@@ -29,7 +29,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const [isLoading, setIsLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
 
-  // Check if the user is authenticated on mount
+  // Check if the user is authenticated and is an admin
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -37,19 +37,29 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         const { data } = await supabase.auth.getSession();
         
         if (data.session) {
-          // User is logged in, now check if they're an admin
           const { data: userData } = await supabase.auth.getUser();
           const email = userData.user?.email;
           
           console.log("Logged in user email:", email);
           setCurrentEmail(email || null);
           
-          if (email) {
-            // Here we could check against a table of admin users or emails
-            // For now we'll just authenticate the user
-            setIsAuthenticated(true);
+          if (email && userData.user) {
+            // Check if user is an admin using our new function
+            const { data: isAdminData, error } = await supabase
+              .rpc('is_admin_user', { user_uuid: userData.user.id });
+            
+            if (error) {
+              console.error("Error checking admin status:", error);
+              setIsAuthenticated(false);
+            } else if (isAdminData) {
+              console.log("User is verified as admin");
+              setIsAuthenticated(true);
+            } else {
+              console.log("User is not an admin, logging out");
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+            }
           } else {
-            // Not an admin, log them out
             await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
@@ -66,26 +76,40 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state change:", event, session?.user?.email);
+      console.log("Admin auth state change:", event, session?.user?.email);
       
       if (event === 'SIGNED_IN') {
-        // Use setTimeout to avoid potential deadlocks with Supabase auth
         setTimeout(async () => {
           const { data } = await supabase.auth.getUser();
           const email = data.user?.email;
           
-          console.log("User signed in:", email);
+          console.log("Admin user signed in:", email);
           setCurrentEmail(email || null);
           
-          if (email) {
-            setIsAuthenticated(true);
+          if (email && data.user) {
+            // Verify admin status
+            const { data: isAdminData, error } = await supabase
+              .rpc('is_admin_user', { user_uuid: data.user.id });
+            
+            if (error) {
+              console.error("Error checking admin status:", error);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+            } else if (isAdminData) {
+              console.log("Admin verified successfully");
+              setIsAuthenticated(true);
+            } else {
+              console.log("User is not an admin");
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+            }
           } else {
             await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         }, 0);
       } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
+        console.log("Admin user signed out");
         setIsAuthenticated(false);
         setCurrentEmail(null);
       }
@@ -100,7 +124,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   const login = async (email: string, password: string) => {
     try {
-      console.log("Attempting login with email:", email);
+      console.log("Attempting admin login with email:", email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -108,20 +132,36 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       });
       
       if (error) {
-        console.error("Login error:", error.message);
+        console.error("Admin login error:", error.message);
         return { success: false, error: error.message };
       }
       
-      if (!data.session) {
+      if (!data.session || !data.user) {
         return { success: false, error: "No session returned from authentication" };
       }
       
-      console.log("Login successful:", data.user?.email);
+      // Verify the user is an admin
+      const { data: isAdminData, error: adminError } = await supabase
+        .rpc('is_admin_user', { user_uuid: data.user.id });
+      
+      if (adminError) {
+        console.error("Error checking admin status:", adminError);
+        await supabase.auth.signOut();
+        return { success: false, error: "Error verifying admin access" };
+      }
+      
+      if (!isAdminData) {
+        console.log("User is not an admin, denying access");
+        await supabase.auth.signOut();
+        return { success: false, error: "Access denied. You are not authorized to access the admin panel." };
+      }
+      
+      console.log("Admin login successful:", data.user?.email);
       setCurrentEmail(data.user?.email || null);
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
-      console.error("Unexpected login error:", error);
+      console.error("Unexpected admin login error:", error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : "An unknown error occurred" 
@@ -132,7 +172,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error("Logout error:", error.message);
+      console.error("Admin logout error:", error.message);
     }
     setIsAuthenticated(false);
     setCurrentEmail(null);

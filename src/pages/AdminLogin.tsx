@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Lock, LogIn } from "lucide-react";
+import { Lock, LogIn, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -42,7 +42,7 @@ const AdminLogin = () => {
       
       if (success) {
         toast({
-          title: "Login successful",
+          title: "Admin login successful",
           description: "Welcome to the admin panel.",
           variant: "default",
         });
@@ -50,8 +50,8 @@ const AdminLogin = () => {
         navigate("/admin");
       } else {
         toast({
-          title: "Login failed",
-          description: error || "Invalid email or password. Please check your credentials and try again.",
+          title: "Admin login failed",
+          description: error || "Invalid credentials or insufficient permissions.",
           variant: "destructive",
         });
       }
@@ -77,11 +77,11 @@ const AdminLogin = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Lock className="h-6 w-6" />
-            Admin Login
+            <Shield className="h-6 w-6 text-red-500" />
+            Admin Access
           </CardTitle>
           <CardDescription>
-            Enter your Supabase credentials to access the admin panel
+            Enter your admin credentials to access the management panel. Only authorized administrators can access this area.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -92,11 +92,11 @@ const AdminLogin = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Admin Email</FormLabel>
                     <FormControl>
                       <Input 
                         type="email" 
-                        placeholder="Enter your email" 
+                        placeholder="Enter your admin email" 
                         disabled={isLoading}
                         {...field}
                       />
@@ -124,7 +124,7 @@ const AdminLogin = () => {
                 )}
               />
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-3">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -133,15 +133,19 @@ const AdminLogin = () => {
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                    Logging in...
+                    Verifying access...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
-                    Login
+                    Access Admin Panel
                   </span>
                 )}
               </Button>
+              <div className="text-xs text-gray-500 text-center">
+                <Lock className="h-3 w-3 inline mr-1" />
+                Secure admin authentication
+              </div>
             </CardFooter>
           </form>
         </Form>

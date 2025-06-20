@@ -347,6 +347,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_admin_user: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       submit_quote_request: {
         Args:
           | { product_id: string; quantity: number; message?: string }
