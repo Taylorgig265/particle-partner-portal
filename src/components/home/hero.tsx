@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { ArrowRight, Stethoscope, Shield, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -13,10 +13,10 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-particle-light to-particle-gray py-20 lg:py-32">
+    <section className="relative overflow-hidden bg-gradient-to-br from-cyan-50 to-blue-100 py-20 lg:py-32">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-white/50 backdrop-blur-3xl"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-particle-navy/10 to-particle-secondary/10"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10"></div>
       
       <div className="container relative mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -34,29 +34,30 @@ const Hero = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <span className="bg-particle-gold/20 text-particle-navy text-sm font-medium px-3 py-1 rounded-full">
-                  Strategic Investment Solutions
+                <span className="bg-cyan-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                  Medical Equipment Excellence
                 </span>
               </motion.div>
               
               <motion.h1 
-                className="text-4xl lg:text-6xl font-bold text-particle-navy leading-tight"
+                className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                Unlock Your{' '}
-                <span className="text-particle-gold">Investment</span> Potential
+                Your Trusted Partner in{' '}
+                <span className="text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text">Medical Equipment</span>
               </motion.h1>
               
               <motion.p 
-                className="text-xl text-particle-secondary leading-relaxed"
+                className="text-xl text-gray-600 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                Partner with Particle Investment to access premium opportunities and strategic insights. 
-                We deliver tailored investment solutions designed to maximize your portfolio performance.
+                Particle Investment provides high-quality diagnostic and medical equipment to healthcare 
+                facilities across Malawi. Over a decade of experience serving hospitals, clinics, laboratories, 
+                and industrial clients with certified, reliable solutions.
               </motion.p>
             </div>
 
@@ -67,17 +68,17 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="flex items-center space-x-2 text-particle-navy">
-                <TrendingUp className="h-5 w-5 text-particle-gold" />
-                <span className="text-sm font-medium">Growth Focused</span>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Stethoscope className="h-5 w-5 text-cyan-500" />
+                <span className="text-sm font-medium">CE/FDA Approved</span>
               </div>
-              <div className="flex items-center space-x-2 text-particle-navy">
-                <DollarSign className="h-5 w-5 text-particle-gold" />
-                <span className="text-sm font-medium">Premium Returns</span>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Shield className="h-5 w-5 text-cyan-500" />
+                <span className="text-sm font-medium">12-Month Warranty</span>
               </div>
-              <div className="flex items-center space-x-2 text-particle-navy">
-                <Target className="h-5 w-5 text-particle-gold" />
-                <span className="text-sm font-medium">Strategic Insights</span>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <Award className="h-5 w-5 text-cyan-500" />
+                <span className="text-sm font-medium">Expert Support</span>
               </div>
             </motion.div>
 
@@ -88,22 +89,22 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Button asChild size="lg" className="bg-particle-gold hover:bg-particle-accent text-particle-navy">
+              <Button asChild size="lg" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                 <Link to="/products">
-                  Explore Opportunities
+                  View Our Products
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-particle-navy text-particle-navy hover:bg-particle-navy hover:text-white">
+              <Button asChild variant="outline" size="lg" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
                 <Link to="/contact">
-                  Schedule Consultation
+                  Request Quote
                 </Link>
               </Button>
             </motion.div>
 
             {/* Particle Investment branding */}
             <motion.div 
-              className="pt-8 border-t border-particle-navy/20"
+              className="pt-8 border-t border-gray-200"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
@@ -118,14 +119,14 @@ const Hero = () => {
                     onError={handleImageError}
                   />
                 ) : (
-                  <div className="h-12 px-6 flex items-center text-particle-navy text-lg font-bold border border-particle-gold rounded">
-                    Particle Investment
+                  <div className="h-12 px-6 flex items-center text-blue-800 text-lg font-bold border border-cyan-500 rounded">
+                    PI
                   </div>
                 )}
                 
                 <div className="space-y-1">
-                  <p className="text-particle-navy font-semibold">Particle Investment</p>
-                  <p className="text-sm text-particle-secondary">Building Wealth Through Strategic Partnerships</p>
+                  <p className="text-gray-900 font-semibold">Particle Investment</p>
+                  <p className="text-sm text-gray-500">Your Partner in Medical Excellence</p>
                 </div>
               </div>
             </motion.div>
@@ -140,15 +141,15 @@ const Hero = () => {
           >
             <div className="relative z-10">
               <img
-                src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop&crop=center"
-                alt="Investment Strategy and Financial Growth"
+                src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop&crop=center"
+                alt="Medical laboratory equipment and diagnostic tools"
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 loading="eager"
               />
             </div>
             {/* Decorative elements */}
-            <div className="absolute -top-4 -right-4 w-72 h-72 bg-particle-gold/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-particle-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+            <div className="absolute -top-4 -right-4 w-72 h-72 bg-cyan-400/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+            <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-blue-400/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
           </motion.div>
         </div>
       </div>
