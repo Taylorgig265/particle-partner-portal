@@ -141,8 +141,8 @@ const Hero = () => {
           >
             <div className="relative z-10">
               <img
-                src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop&crop=center"
-                alt="Medical laboratory equipment and diagnostic tools"
+                src="https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=800&h=600&fit=crop&crop=center"
+                alt="Medical laboratory equipment and diagnostic instruments"
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 loading="eager"
               />

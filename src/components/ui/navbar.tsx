@@ -15,6 +15,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { isAuthenticated: isAdmin, logout: adminLogout, currentEmail } = useAdminAuth();
@@ -37,6 +38,10 @@ const Navbar = () => {
     await adminLogout();
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   // Show admin interface if on admin pages
   const isAdminPage = location.pathname.startsWith('/admin');
 
@@ -45,8 +50,20 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold text-gray-800">
-              EcoBuild Solutions
+            <Link to="/" className="flex items-center space-x-3">
+              {!imageError ? (
+                <img 
+                  src="/lovable-uploads/c13d30e7-eaf2-483c-9dca-5a6aaa115cd1.png" 
+                  alt="Particle Investment" 
+                  className="h-8 object-contain"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="h-8 px-3 flex items-center text-blue-800 text-sm font-bold border border-cyan-500 rounded">
+                  PI
+                </div>
+              )}
+              <span className="text-xl font-bold text-gray-800">Particle Investment</span>
             </Link>
           </div>
 
@@ -59,8 +76,8 @@ const Navbar = () => {
                 to={item.href}
                 className={`text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? "text-green-600 border-b-2 border-green-600 pb-1"
-                    : "text-gray-700 hover:text-green-600"
+                    ? "text-cyan-600 border-b-2 border-cyan-600 pb-1"
+                    : "text-gray-700 hover:text-cyan-600"
                 }`}
               >
                 {item.name}
@@ -137,8 +154,8 @@ const Navbar = () => {
                   to={item.href}
                   className={`block px-3 py-2 text-base font-medium transition-colors ${
                     isActive(item.href)
-                      ? "text-green-600 bg-green-50"
-                      : "text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      ? "text-cyan-600 bg-cyan-50"
+                      : "text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -152,7 +169,7 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                       onClick={() => setIsOpen(false)}
                     >
                       Back to Site
@@ -162,7 +179,7 @@ const Navbar = () => {
                         handleAdminSignOut();
                         setIsOpen(false);
                       }}
-                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                     >
                       Admin Logout
                     </button>
@@ -171,7 +188,7 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/dashboard"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                       onClick={() => setIsOpen(false)}
                     >
                       Dashboard
@@ -181,7 +198,7 @@ const Navbar = () => {
                         handleCustomerSignOut();
                         setIsOpen(false);
                       }}
-                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                     >
                       Sign Out
                     </button>
@@ -189,7 +206,7 @@ const Navbar = () => {
                 ) : !isAdminPage ? (
                   <Link
                     to="/auth"
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                     onClick={() => setIsOpen(false)}
                   >
                     Sign In
