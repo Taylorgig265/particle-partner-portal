@@ -9,7 +9,8 @@ import {
   BarChart,
   RefreshCw,
   LogOut,
-  ImageIcon
+  ImageIcon,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,7 @@ import AdminOrders from "@/components/admin/AdminOrders";
 import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminStatistics from "@/components/admin/AdminStatistics";
 import AdminGallery from "@/components/admin/AdminGallery";
+import AdminManagement from "@/components/admin/AdminManagement";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -25,12 +27,27 @@ import { getVisitorStats } from '@/services/visitor-service';
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState("statistics");  // Default to statistics tab
+  const [activeTab, setActiveTab] = useState("statistics");
   const [refreshKey, setRefreshKey] = useState(0);
   const [visitorStats, setVisitorStats] = useState<any>(null);
   const { toast } = useToast();
-  const { logout } = useAdminAuth();
+  const { logout, privileges, isSuperAdmin, checkPrivilege } = useAdminAuth();
   const navigate = useNavigate();
+  
+  // Set default tab based on permissions
+  useEffect(() => {
+    if (checkPrivilege('view_statistics')) {
+      setActiveTab("statistics");
+    } else if (checkPrivilege('manage_products')) {
+      setActiveTab("products");
+    } else if (checkPrivilege('process_orders')) {
+      setActiveTab("orders");
+    } else if (checkPrivilege('access_clients')) {
+      setActiveTab("customers");
+    } else {
+      setActiveTab("gallery"); // Gallery is always accessible
+    }
+  }, [privileges, isSuperAdmin]);
   
   // Refresh content when tab changes
   useEffect(() => {
@@ -39,7 +56,7 @@ const Admin = () => {
 
   // Load visitor stats when on statistics tab
   useEffect(() => {
-    if (activeTab === "statistics") {
+    if (activeTab === "statistics" && checkPrivilege('view_statistics')) {
       fetchVisitorStats();
     }
   }, [activeTab, refreshKey]);
@@ -79,6 +96,38 @@ const Admin = () => {
     });
     navigate("/admin/login");
   };
+
+  // Get available tabs based on permissions
+  const getAvailableTabs = () => {
+    const tabs = [];
+    
+    if (checkPrivilege('view_statistics')) {
+      tabs.push({ id: "statistics", label: "Statistics", icon: BarChart });
+    }
+    
+    if (checkPrivilege('manage_products')) {
+      tabs.push({ id: "products", label: "Products", icon: Package });
+    }
+    
+    if (checkPrivilege('process_orders')) {
+      tabs.push({ id: "orders", label: "Orders", icon: ShoppingCart });
+    }
+    
+    if (checkPrivilege('access_clients')) {
+      tabs.push({ id: "customers", label: "Customers", icon: Users });
+    }
+    
+    // Gallery is always accessible to approved admins
+    tabs.push({ id: "gallery", label: "Gallery", icon: ImageIcon });
+    
+    if (isSuperAdmin) {
+      tabs.push({ id: "management", label: "Admin Management", icon: Shield });
+    }
+    
+    return tabs;
+  };
+
+  const availableTabs = getAvailableTabs();
   
   return (
     <motion.div
@@ -91,7 +140,10 @@ const Admin = () => {
         <header className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage products, orders, and customers</p>
+            <p className="text-gray-600">
+              {isSuperAdmin && "Super Admin - Full Access"}
+              {!isSuperAdmin && `Manage ${availableTabs.map(t => t.label.toLowerCase()).join(', ')}`}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} className="mr-2">
@@ -112,48 +164,51 @@ const Admin = () => {
         </header>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 h-14">
-            <TabsTrigger value="products" className="flex items-center space-x-2">
-              <Package size={18} />
-              <span>Products</span>
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center space-x-2">
-              <ShoppingCart size={18} />
-              <span>Orders</span>
-            </TabsTrigger>
-            <TabsTrigger value="customers" className="flex items-center space-x-2">
-              <Users size={18} />
-              <span>Customers</span>
-            </TabsTrigger>
-            <TabsTrigger value="gallery" className="flex items-center space-x-2">
-              <ImageIcon size={18} />
-              <span>Gallery</span>
-            </TabsTrigger>
-            <TabsTrigger value="statistics" className="flex items-center space-x-2">
-              <BarChart size={18} />
-              <span>Statistics</span>
-            </TabsTrigger>
+          <TabsList className={`grid w-full h-14 grid-cols-${availableTabs.length}`}>
+            {availableTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
+                  <Icon size={18} />
+                  <span>{tab.label}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
           
-          <TabsContent value="products" className="bg-white p-6 rounded-lg shadow">
-            <AdminProducts key={`products-${refreshKey}`} />
-          </TabsContent>
+          {checkPrivilege('view_statistics') && (
+            <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
+              <AdminStatistics key={`statistics-${refreshKey}`} visitorStats={visitorStats} />
+            </TabsContent>
+          )}
           
-          <TabsContent value="orders" className="bg-white p-6 rounded-lg shadow">
-            <AdminOrders key={`orders-${refreshKey}`} />
-          </TabsContent>
+          {checkPrivilege('manage_products') && (
+            <TabsContent value="products" className="bg-white p-6 rounded-lg shadow">
+              <AdminProducts key={`products-${refreshKey}`} />
+            </TabsContent>
+          )}
           
-          <TabsContent value="customers" className="bg-white p-6 rounded-lg shadow">
-            <AdminCustomers key={`customers-${refreshKey}`} />
-          </TabsContent>
+          {checkPrivilege('process_orders') && (
+            <TabsContent value="orders" className="bg-white p-6 rounded-lg shadow">
+              <AdminOrders key={`orders-${refreshKey}`} />
+            </TabsContent>
+          )}
+          
+          {checkPrivilege('access_clients') && (
+            <TabsContent value="customers" className="bg-white p-6 rounded-lg shadow">
+              <AdminCustomers key={`customers-${refreshKey}`} />
+            </TabsContent>
+          )}
           
           <TabsContent value="gallery" className="bg-white p-6 rounded-lg shadow">
             <AdminGallery key={`gallery-${refreshKey}`} />
           </TabsContent>
           
-          <TabsContent value="statistics" className="bg-white p-6 rounded-lg shadow">
-            <AdminStatistics key={`statistics-${refreshKey}`} visitorStats={visitorStats} />
-          </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="management" className="bg-white p-6 rounded-lg shadow">
+              <AdminManagement key={`management-${refreshKey}`} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </motion.div>

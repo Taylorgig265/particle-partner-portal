@@ -11,6 +11,7 @@ import Gallery from '@/pages/Gallery';
 import ProjectGalleryPage from '@/pages/ProjectGalleryPage';
 import Admin from '@/pages/Admin';
 import AdminLogin from '@/pages/AdminLogin';
+import AdminRegistration from '@/components/AdminRegistration';
 import Auth from '@/pages/Auth';
 import CustomerDashboard from '@/pages/CustomerDashboard';
 import NotFound from '@/pages/NotFound';
@@ -77,6 +78,7 @@ function App() {
                 </AdminAuthGuard>
               } />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/register" element={<AdminRegistration />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>

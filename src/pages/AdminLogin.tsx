@@ -1,12 +1,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Lock, LogIn, Shield } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Lock, LogIn, Shield, UserPlus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +25,7 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, isAuthenticated } = useAdminAuth();
+  const { login, isAuthenticated, adminStatus } = useAdminAuth();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -49,6 +50,12 @@ const AdminLogin = () => {
         
         navigate("/admin");
       } else {
+        // Check if the error is about pending approval
+        if (error?.includes("pending approval")) {
+          // Don't show error toast, just show the alert in the UI
+          return;
+        }
+        
         toast({
           title: "Admin login failed",
           description: error || "Invalid credentials or insufficient permissions.",
@@ -87,6 +94,24 @@ const AdminLogin = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
+              {adminStatus === 'pending' && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Your admin account is pending approval. Please wait for a super admin to approve your access before you can log in.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {adminStatus === 'rejected' && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Your admin account has been rejected. Please contact a super admin for assistance.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <FormField
                 control={form.control}
                 name="email"
@@ -128,7 +153,7 @@ const AdminLogin = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || adminStatus === 'pending' || adminStatus === 'rejected'}
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
@@ -142,6 +167,19 @@ const AdminLogin = () => {
                   </span>
                 )}
               </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full"
+                asChild
+              >
+                <Link to="/admin/register">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Request Admin Access
+                </Link>
+              </Button>
+              
               <div className="text-xs text-gray-500 text-center">
                 <Lock className="h-3 w-3 inline mr-1" />
                 Secure admin authentication

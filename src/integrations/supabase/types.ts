@@ -11,24 +11,56 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          can_access_clients: boolean | null
+          can_manage_products: boolean | null
+          can_process_orders: boolean | null
+          can_view_statistics: boolean | null
           created_at: string | null
           id: string
           is_super_admin: boolean | null
+          name: string | null
+          status: string | null
           user_id: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          can_access_clients?: boolean | null
+          can_manage_products?: boolean | null
+          can_process_orders?: boolean | null
+          can_view_statistics?: boolean | null
           created_at?: string | null
           id?: string
           is_super_admin?: boolean | null
+          name?: string | null
+          status?: string | null
           user_id?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          can_access_clients?: boolean | null
+          can_manage_products?: boolean | null
+          can_process_orders?: boolean | null
+          can_view_statistics?: boolean | null
           created_at?: string | null
           id?: string
           is_super_admin?: boolean | null
+          name?: string | null
+          status?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gallery: {
         Row: {
@@ -347,9 +379,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_has_privilege: {
+        Args: { user_uuid: string; privilege_name: string }
+        Returns: boolean
+      }
+      approve_admin_user: {
+        Args: {
+          admin_id_to_approve: string
+          approver_user_id: string
+          grant_manage_products?: boolean
+          grant_process_orders?: boolean
+          grant_access_clients?: boolean
+          grant_view_statistics?: boolean
+        }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: { user_uuid: string }
         Returns: boolean
+      }
+      register_admin_user: {
+        Args: { user_uuid: string; admin_name: string }
+        Returns: string
       }
       submit_quote_request: {
         Args:
