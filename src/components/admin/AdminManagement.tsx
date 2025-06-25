@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Check, X, Shield, Users, Eye, Package, ShoppingCart, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,13 @@ const AdminManagement = () => {
         return;
       }
 
-      setAdminUsers(data || []);
+      // Type assertion to ensure proper typing
+      const typedAdminUsers = (data || []).map(user => ({
+        ...user,
+        status: user.status as 'pending' | 'approved' | 'rejected'
+      })) as AdminUser[];
+
+      setAdminUsers(typedAdminUsers);
     } catch (error) {
       console.error("Error in fetchAdminUsers:", error);
       toast({

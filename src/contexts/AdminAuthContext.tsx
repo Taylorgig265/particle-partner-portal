@@ -102,7 +102,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
             const adminDetails = await fetchAdminDetails(userData.user.id);
             
             if (adminDetails) {
-              setAdminStatus(adminDetails.status);
+              // Type assertion for status to ensure proper typing
+              const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
+              setAdminStatus(typedStatus);
               setIsSuperAdmin(adminDetails.is_super_admin || false);
               setPrivileges({
                 canManageProducts: adminDetails.can_manage_products || false,
@@ -111,11 +113,11 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
                 canViewStatistics: adminDetails.can_view_statistics || false,
               });
 
-              if (adminDetails.status === 'approved') {
+              if (typedStatus === 'approved') {
                 console.log("User is approved admin");
                 setIsAuthenticated(true);
               } else {
-                console.log(`User admin status: ${adminDetails.status}`);
+                console.log(`User admin status: ${typedStatus}`);
                 setIsAuthenticated(false);
               }
             } else {
@@ -163,7 +165,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
             const adminDetails = await fetchAdminDetails(data.user.id);
             
             if (adminDetails) {
-              setAdminStatus(adminDetails.status);
+              // Type assertion for status to ensure proper typing
+              const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
+              setAdminStatus(typedStatus);
               setIsSuperAdmin(adminDetails.is_super_admin || false);
               setPrivileges({
                 canManageProducts: adminDetails.can_manage_products || false,
@@ -172,11 +176,11 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
                 canViewStatistics: adminDetails.can_view_statistics || false,
               });
 
-              if (adminDetails.status === 'approved') {
+              if (typedStatus === 'approved') {
                 console.log("Admin verified successfully");
                 setIsAuthenticated(true);
               } else {
-                console.log(`Admin status: ${adminDetails.status}`);
+                console.log(`Admin status: ${typedStatus}`);
                 setIsAuthenticated(false);
               }
             } else {
@@ -238,7 +242,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         return { success: false, error: "Access denied. You are not registered as an admin." };
       }
       
-      setAdminStatus(adminDetails.status);
+      // Type assertion for status to ensure proper typing
+      const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
+      setAdminStatus(typedStatus);
       setIsSuperAdmin(adminDetails.is_super_admin || false);
       setPrivileges({
         canManageProducts: adminDetails.can_manage_products || false,
@@ -247,9 +253,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         canViewStatistics: adminDetails.can_view_statistics || false,
       });
 
-      if (adminDetails.status !== 'approved') {
+      if (typedStatus !== 'approved') {
         await supabase.auth.signOut();
-        const statusMessage = adminDetails.status === 'pending' 
+        const statusMessage = typedStatus === 'pending' 
           ? "Your admin account is pending approval. Please wait for a super admin to approve your access."
           : "Your admin account has been rejected. Please contact a super admin.";
         return { success: false, error: statusMessage };
