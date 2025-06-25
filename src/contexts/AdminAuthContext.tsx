@@ -122,11 +122,17 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
               }
             } else {
               console.log("User is not registered as admin");
-              await supabase.auth.signOut();
               setIsAuthenticated(false);
+              setAdminStatus(null);
+              setIsSuperAdmin(false);
+              setPrivileges({
+                canManageProducts: false,
+                canProcessOrders: false,
+                canAccessClients: false,
+                canViewStatistics: false,
+              });
             }
           } else {
-            await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         } else {
@@ -185,11 +191,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
               }
             } else {
               console.log("User is not registered as admin");
-              await supabase.auth.signOut();
               setIsAuthenticated(false);
             }
           } else {
-            await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         }, 0);
