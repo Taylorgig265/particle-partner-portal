@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useGallery, GalleryItem } from "@/services/product-service";
 import { useProjects, Project } from "@/services/project-service";
@@ -427,146 +426,262 @@ const AdminGallery = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
           <TabsTrigger value="gallery">Gallery Items</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      <TabsContent value="gallery" className="mt-0">
-        {projects.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium mb-2">Filter by Project:</h3>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={activeProject === null ? "default" : "outline"} 
-                size="sm"
-                onClick={() => setActiveProject(null)}
-              >
-                All Images
-              </Button>
-              {projects.map(project => (
-                <Button
-                  key={project.id}
-                  variant={activeProject === project.id ? "default" : "outline"}
+        <TabsContent value="gallery" className="mt-0">
+          {projects.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-2">Filter by Project:</h3>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant={activeProject === null ? "default" : "outline"} 
                   size="sm"
-                  onClick={() => setActiveProject(project.id)}
+                  onClick={() => setActiveProject(null)}
                 >
-                  {project.name}
+                  All Images
                 </Button>
+                {projects.map(project => (
+                  <Button
+                    key={project.id}
+                    variant={activeProject === project.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveProject(project.id)}
+                  >
+                    {project.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {items.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
+              <Image className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No gallery images</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by adding your first image to the gallery.</p>
+              <div className="mt-6">
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Image
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map((item) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <div className="aspect-video relative">
+                    <img 
+                      src={item.image_url} 
+                      alt={item.title} 
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-2 right-2 opacity-80 hover:opacity-100"
+                      onClick={() => handleDeleteGalleryItem(item.id)}
+                    >
+                      <Trash size={16} />
+                    </Button>
+                  </div>
+                  <CardHeader>
+                    <CardTitle>{item.title}</CardTitle>
+                    {item.description && <CardDescription>{item.description}</CardDescription>}
+                  </CardHeader>
+                  <CardFooter className="flex flex-col items-start text-xs text-gray-500">
+                    <span>Added on {new Date(item.created_at).toLocaleDateString()}</span>
+                    {item.project_id && (
+                      <span className="mt-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
+                        Project: {projects.find(p => p.id === item.project_id)?.name || 'Unknown'}
+                      </span>
+                    )}
+                  </CardFooter>
+                </Card>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </TabsContent>
 
-        {items.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
-            <Image className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No gallery images</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by adding your first image to the gallery.</p>
-            <div className="mt-6">
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Image
-              </Button>
+        <TabsContent value="projects" className="mt-0">
+          {projects.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
+              <FolderPlus className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No projects</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by creating your first project to organize gallery images.</p>
+              <div className="mt-6">
+                <Button onClick={() => setIsAddProjectDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Project
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <Card key={project.id} className="overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <FolderPlus className="mr-2 h-5 w-5" />
+                      {project.name}
+                    </CardTitle>
+                    {project.description && <CardDescription>{project.description}</CardDescription>}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-500">
+                      {items.filter(item => item.project_id === project.id).length} images in this project
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setActiveTab("gallery");
+                        setActiveProject(project.id);
+                      }}
+                    >
+                      View Images
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      <Trash size={16} className="mr-1" />
+                      Delete
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Add Project Dialog */}
+      <Dialog open={isAddProjectDialogOpen} onOpenChange={setIsAddProjectDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Project</DialogTitle>
+            <DialogDescription>Create a new project to group gallery images.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="name">Project Name</label>
+              <Input 
+                id="name" 
+                name="name" 
+                value={projectFormData.name} 
+                onChange={handleProjectInputChange} 
+                placeholder="Project Name" 
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="description">Description</label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                value={projectFormData.description} 
+                onChange={handleProjectInputChange} 
+                placeholder="Describe this project"
+              />
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
-                <div className="aspect-video relative">
-                  <img 
-                    src={item.image_url} 
-                    alt={item.title} 
-                    className="object-cover w-full h-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                    }}
-                  />
-                  <Button 
-                    variant="destructive" 
-                    size="icon" 
-                    className="absolute top-2 right-2 opacity-80 hover:opacity-100"
-                    onClick={() => handleDeleteGalleryItem(item.id)}
-                  >
-                    <Trash size={16} />
-                  </Button>
-                </div>
-                <CardHeader>
-                  <CardTitle>{item.title}</CardTitle>
-                  {item.description && <CardDescription>{item.description}</CardDescription>}
-                </CardHeader>
-                <CardFooter className="flex flex-col items-start text-xs text-gray-500">
-                  <span>Added on {new Date(item.created_at).toLocaleDateString()}</span>
-                  {item.project_id && (
-                    <span className="mt-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
-                      Project: {projects.find(p => p.id === item.project_id)?.name || 'Unknown'}
-                    </span>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </TabsContent>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddProjectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddProject}>
+              Create Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <TabsContent value="projects" className="mt-0">
-        {projects.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
-            <FolderPlus className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No projects</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating your first project to organize gallery images.</p>
-            <div className="mt-6">
-              <Button onClick={() => setIsAddProjectDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Project
-              </Button>
+      {/* Add Gallery Item Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Gallery Image</DialogTitle>
+            <DialogDescription>Share photos of your projects and work.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="title">Title</label>
+              <Input 
+                id="title" 
+                name="title" 
+                value={formData.title} 
+                onChange={handleInputChange} 
+                placeholder="Image Title" 
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="description">Description</label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                value={formData.description} 
+                onChange={handleInputChange} 
+                placeholder="Describe what's shown in this image"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="project_id">Project (Optional)</label>
+              <Select value={formData.project_id} onValueChange={handleProjectSelectChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Project</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="image_file">Upload Image</label>
+              <Input 
+                id="image_file" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+              />
+              <p className="text-xs text-gray-500">Or</p>
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="image_url">Image URL</label>
+              <Input 
+                id="image_url" 
+                name="image_url" 
+                value={formData.image_url} 
+                onChange={handleInputChange} 
+                placeholder="https://example.com/image.jpg" 
+              />
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <Card key={project.id} className="overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FolderPlus className="mr-2 h-5 w-5" />
-                    {project.name}
-                  </CardTitle>
-                  {project.description && <CardDescription>{project.description}</CardDescription>}
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    {items.filter(item => item.project_id === project.id).length} images in this project
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setActiveTab("gallery");
-                      setActiveProject(project.id);
-                    }}
-                  >
-                    View Images
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleDeleteProject(project.id)}
-                  >
-                    <Trash size={16} className="mr-1" />
-                    Delete
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </TabsContent>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddGalleryItem} disabled={isUploading}>
+              {isUploading ? "Uploading..." : "Add to Gallery"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
