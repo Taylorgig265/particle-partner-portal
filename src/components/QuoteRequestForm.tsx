@@ -95,7 +95,8 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.rpc('submit_quote_request_with_contact', {
+      // Use type assertion to call the new function
+      const { data, error } = await (supabase as any).rpc('submit_quote_request_with_contact', {
         product_id: productId,
         quantity: formData.quantity,
         message: formData.message,
