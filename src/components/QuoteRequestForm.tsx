@@ -49,18 +49,24 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
   useEffect(() => {
     const loadUserProfile = async () => {
       if (user) {
-        const { data: profile } = await supabase
+        console.log('Loading user profile for user:', user.id);
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('phone, company')
           .eq('id', user.id)
           .maybeSingle();
         
-        if (profile) {
-          setFormData(prev => ({
-            ...prev,
-            phone: profile.phone || '',
-            company: profile.company || ''
-          }));
+        if (error) {
+          console.error('Error loading user profile:', error);
+        } else {
+          console.log('User profile loaded:', profile);
+          if (profile) {
+            setFormData(prev => ({
+              ...prev,
+              phone: profile.phone || '',
+              company: profile.company || ''
+            }));
+          }
         }
       }
     };
@@ -78,12 +84,19 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Quote request form submitted');
+    console.log('Current user:', user);
+    console.log('Form data:', formData);
+    console.log('Product ID:', productId);
+    
     if (!user) {
+      console.log('No user found, redirecting to auth');
       navigate('/auth');
       return;
     }
 
     if (!formData.phone.trim()) {
+      console.log('Phone number is missing');
       toast({
         title: "Phone number required",
         description: "Please provide a phone number for the quote request.",
@@ -95,6 +108,15 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
     setIsLoading(true);
 
     try {
+      console.log('Calling submit_quote_request_with_contact RPC function');
+      console.log('Parameters:', {
+        product_id: productId,
+        quantity: formData.quantity,
+        message: formData.message,
+        phone: formData.phone,
+        company: formData.company
+      });
+
       // Use type assertion to call the new function
       const { data, error } = await (supabase as any).rpc('submit_quote_request_with_contact', {
         product_id: productId,
@@ -104,10 +126,14 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
         company: formData.company
       });
 
+      console.log('RPC response:', { data, error });
+
       if (error) {
+        console.error('RPC error details:', error);
         throw error;
       }
 
+      console.log('Quote request submitted successfully');
       toast({
         title: "Quote request submitted",
         description: "We'll get back to you with a quote soon!",
@@ -126,9 +152,16 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
       }
     } catch (error) {
       console.error('Quote request error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       toast({
         title: "Request failed",
-        description: "Failed to submit quote request. Please try again.",
+        description: `Failed to submit quote request: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
     } finally {
