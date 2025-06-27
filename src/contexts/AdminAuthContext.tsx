@@ -83,6 +83,65 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     }
   };
 
+  const resetAdminState = () => {
+    setIsAuthenticated(false);
+    setCurrentEmail(null);
+    setAdminStatus(null);
+    setIsSuperAdmin(false);
+    setPrivileges({
+      canManageProducts: false,
+      canProcessOrders: false,
+      canAccessClients: false,
+      canViewStatistics: false,
+    });
+  };
+
+  const updateAdminState = async (user: any) => {
+    if (!user) {
+      resetAdminState();
+      return;
+    }
+
+    const email = user.email;
+    console.log("Checking admin status for user:", email);
+    setCurrentEmail(email || null);
+    
+    // Get admin details
+    const adminDetails = await fetchAdminDetails(user.id);
+    
+    if (adminDetails) {
+      // Type assertion for status to ensure proper typing
+      const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
+      setAdminStatus(typedStatus);
+      setIsSuperAdmin(adminDetails.is_super_admin || false);
+      setPrivileges({
+        canManageProducts: adminDetails.can_manage_products || false,
+        canProcessOrders: adminDetails.can_process_orders || false,
+        canAccessClients: adminDetails.can_access_clients || false,
+        canViewStatistics: adminDetails.can_view_statistics || false,
+      });
+
+      if (typedStatus === 'approved') {
+        console.log("User is approved admin");
+        setIsAuthenticated(true);
+      } else {
+        console.log(`User admin status: ${typedStatus}`);
+        setIsAuthenticated(false);
+      }
+    } else {
+      console.log("User is not registered as admin");
+      setAdminStatus(null);
+      setIsSuperAdmin(false);
+      setPrivileges({
+        canManageProducts: false,
+        canProcessOrders: false,
+        canAccessClients: false,
+        canViewStatistics: false,
+      });
+      setIsAuthenticated(false);
+    }
+  };
+
   // Check if the user is authenticated and is an admin
   useEffect(() => {
     const checkAuth = async () => {
@@ -92,123 +151,30 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         
         if (data.session) {
           const { data: userData } = await supabase.auth.getUser();
-          const email = userData.user?.email;
-          
-          console.log("Logged in user email:", email);
-          setCurrentEmail(email || null);
-          
-          if (email && userData.user) {
-            // Get admin details
-            const adminDetails = await fetchAdminDetails(userData.user.id);
-            
-            if (adminDetails) {
-              // Type assertion for status to ensure proper typing
-              const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
-              setAdminStatus(typedStatus);
-              setIsSuperAdmin(adminDetails.is_super_admin || false);
-              setPrivileges({
-                canManageProducts: adminDetails.can_manage_products || false,
-                canProcessOrders: adminDetails.can_process_orders || false,
-                canAccessClients: adminDetails.can_access_clients || false,
-                canViewStatistics: adminDetails.can_view_statistics || false,
-              });
-
-              if (typedStatus === 'approved') {
-                console.log("User is approved admin");
-                setIsAuthenticated(true);
-              } else {
-                console.log(`User admin status: ${typedStatus}`);
-                setIsAuthenticated(false);
-              }
-            } else {
-              console.log("User is not registered as admin");
-              setIsAuthenticated(false);
-              setAdminStatus(null);
-              setIsSuperAdmin(false);
-              setPrivileges({
-                canManageProducts: false,
-                canProcessOrders: false,
-                canAccessClients: false,
-                canViewStatistics: false,
-              });
-            }
-          } else {
-            setIsAuthenticated(false);
-          }
+          await updateAdminState(userData.user);
         } else {
-          setIsAuthenticated(false);
-          setAdminStatus(null);
-          setIsSuperAdmin(false);
-          setPrivileges({
-            canManageProducts: false,
-            canProcessOrders: false,
-            canAccessClients: false,
-            canViewStatistics: false,
-          });
+          resetAdminState();
         }
       } catch (error) {
-        console.error("Auth check error:", error);
-        setIsAuthenticated(false);
+        console.error("Admin auth check error:", error);
+        resetAdminState();
       } finally {
         setIsLoading(false);
       }
     };
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth state change listener - ONLY for admin-specific logic
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Admin auth state change:", event, session?.user?.email);
       
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Delay to ensure auth state is settled
         setTimeout(async () => {
-          const { data } = await supabase.auth.getUser();
-          const email = data.user?.email;
-          
-          console.log("Admin user signed in:", email);
-          setCurrentEmail(email || null);
-          
-          if (email && data.user) {
-            // Get admin details
-            const adminDetails = await fetchAdminDetails(data.user.id);
-            
-            if (adminDetails) {
-              // Type assertion for status to ensure proper typing
-              const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
-              setAdminStatus(typedStatus);
-              setIsSuperAdmin(adminDetails.is_super_admin || false);
-              setPrivileges({
-                canManageProducts: adminDetails.can_manage_products || false,
-                canProcessOrders: adminDetails.can_process_orders || false,
-                canAccessClients: adminDetails.can_access_clients || false,
-                canViewStatistics: adminDetails.can_view_statistics || false,
-              });
-
-              if (typedStatus === 'approved') {
-                console.log("Admin verified successfully");
-                setIsAuthenticated(true);
-              } else {
-                console.log(`Admin status: ${typedStatus}`);
-                setIsAuthenticated(false);
-              }
-            } else {
-              console.log("User is not registered as admin");
-              setIsAuthenticated(false);
-            }
-          } else {
-            setIsAuthenticated(false);
-          }
-        }, 0);
+          await updateAdminState(session.user);
+        }, 100);
       } else if (event === 'SIGNED_OUT') {
         console.log("Admin user signed out");
-        setIsAuthenticated(false);
-        setCurrentEmail(null);
-        setAdminStatus(null);
-        setIsSuperAdmin(false);
-        setPrivileges({
-          canManageProducts: false,
-          canProcessOrders: false,
-          canAccessClients: false,
-          canViewStatistics: false,
-        });
+        resetAdminState();
       }
     });
     
@@ -248,15 +214,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       
       // Type assertion for status to ensure proper typing
       const typedStatus = adminDetails.status as 'pending' | 'approved' | 'rejected';
-      setAdminStatus(typedStatus);
-      setIsSuperAdmin(adminDetails.is_super_admin || false);
-      setPrivileges({
-        canManageProducts: adminDetails.can_manage_products || false,
-        canProcessOrders: adminDetails.can_process_orders || false,
-        canAccessClients: adminDetails.can_access_clients || false,
-        canViewStatistics: adminDetails.can_view_statistics || false,
-      });
-
+      
       if (typedStatus !== 'approved') {
         await supabase.auth.signOut();
         const statusMessage = typedStatus === 'pending' 
@@ -266,8 +224,10 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       }
       
       console.log("Admin login successful:", data.user?.email);
-      setCurrentEmail(data.user?.email || null);
-      setIsAuthenticated(true);
+      
+      // Update admin state
+      await updateAdminState(data.user);
+      
       return { success: true };
     } catch (error) {
       console.error("Unexpected admin login error:", error);
@@ -283,16 +243,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     if (error) {
       console.error("Admin logout error:", error.message);
     }
-    setIsAuthenticated(false);
-    setCurrentEmail(null);
-    setAdminStatus(null);
-    setIsSuperAdmin(false);
-    setPrivileges({
-      canManageProducts: false,
-      canProcessOrders: false,
-      canAccessClients: false,
-      canViewStatistics: false,
-    });
+    resetAdminState();
   };
 
   return (

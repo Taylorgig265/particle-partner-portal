@@ -42,7 +42,7 @@ const Navbar = () => {
     setImageError(true);
   };
 
-  // Show admin interface if on admin pages
+  // Determine if we're on admin pages
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
@@ -84,7 +84,7 @@ const Navbar = () => {
               </Link>
             ))}
             
-            {/* Admin User Menu */}
+            {/* Authentication Menu - Show admin menu only on admin pages, customer menu only on non-admin pages */}
             {isAdminPage && isAdmin ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -104,30 +104,32 @@ const Navbar = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : /* Customer User Menu */
-            user && !isAdminPage ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="hidden lg:inline">{user.email}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleCustomerSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             ) : !isAdminPage ? (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/auth">Sign In</Link>
-              </Button>
+              // Customer authentication menu - only show on non-admin pages
+              user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span className="hidden lg:inline">{user.email}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard">Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleCustomerSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+              )
             ) : null}
           </div>
 
@@ -184,33 +186,36 @@ const Navbar = () => {
                       Admin Logout
                     </button>
                   </>
-                ) : user && !isAdminPage ? (
-                  <>
+                ) : !isAdminPage ? (
+                  // Customer menu for non-admin pages
+                  user ? (
+                    <>
+                      <Link
+                        to="/dashboard"
+                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleCustomerSignOut();
+                          setIsOpen(false);
+                        }}
+                        className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
                     <Link
-                      to="/dashboard"
+                      to="/auth"
                       className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
                       onClick={() => setIsOpen(false)}
                     >
-                      Dashboard
+                      Sign In
                     </Link>
-                    <button
-                      onClick={() => {
-                        handleCustomerSignOut();
-                        setIsOpen(false);
-                      }}
-                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : !isAdminPage ? (
-                  <Link
-                    to="/auth"
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Sign In
-                  </Link>
+                  )
                 ) : null}
               </div>
             </div>
