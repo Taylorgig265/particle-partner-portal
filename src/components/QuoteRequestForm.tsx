@@ -28,7 +28,9 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     quantity: 1,
-    message: ''
+    message: '',
+    phone: '',
+    company: ''
   });
 
   // Redirect to auth if not logged in
@@ -42,6 +44,29 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
       navigate('/auth');
     }
   }, [user, navigate, toast]);
+
+  // Load user profile data when component mounts
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone, company')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            phone: profile.phone || '',
+            company: profile.company || ''
+          }));
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
@@ -58,13 +83,24 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
       return;
     }
 
+    if (!formData.phone.trim()) {
+      toast({
+        title: "Phone number required",
+        description: "Please provide a phone number for the quote request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.rpc('submit_quote_request', {
+      const { data, error } = await supabase.rpc('submit_quote_request_with_contact', {
         product_id: productId,
         quantity: formData.quantity,
-        message: formData.message
+        message: formData.message,
+        phone: formData.phone,
+        company: formData.company
       });
 
       if (error) {
@@ -79,7 +115,9 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
       // Reset form
       setFormData({
         quantity: 1,
-        message: ''
+        message: '',
+        phone: formData.phone, // Keep phone for convenience
+        company: formData.company // Keep company for convenience
       });
 
       if (onSuccess) {
@@ -118,6 +156,29 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
               value={formData.quantity}
               onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Your phone number"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="company">Company (Optional)</Label>
+            <Input
+              id="company"
+              type="text"
+              value={formData.company}
+              onChange={(e) => handleInputChange('company', e.target.value)}
+              placeholder="Your company name"
             />
           </div>
 
