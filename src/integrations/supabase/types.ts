@@ -416,6 +416,16 @@ export type Database = {
             }
         Returns: string
       }
+      submit_quote_request_with_contact: {
+        Args: {
+          product_id: string
+          quantity: number
+          message?: string
+          phone?: string
+          company?: string
+        }
+        Returns: string
+      }
       update_order_status: {
         Args: { order_id_param: string; new_status: string }
         Returns: undefined
