@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, User, LogOut, Shield } from "lucide-react";
@@ -18,7 +17,7 @@ const Navbar = () => {
   const [imageError, setImageError] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { isAuthenticated: isAdmin, logout: adminLogout, currentEmail } = useAdminAuth();
+  const { isAuthenticated: isAdmin, logout: adminLogout, currentEmail, currentName } = useAdminAuth();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -90,7 +89,7 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <Shield className="h-4 w-4" />
-                    <span className="hidden lg:inline">Admin: {currentEmail}</span>
+                    <span className="hidden lg:inline">Admin: {currentName || currentEmail}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -111,7 +110,7 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      <span className="hidden lg:inline">{user.email}</span>
+                      <span className="hidden lg:inline">{user.user_metadata?.name || user.email}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
