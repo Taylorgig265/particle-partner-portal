@@ -47,6 +47,7 @@ const Footer = () => {
                 { label: 'Services', href: '/services' },
                 { label: 'Partners', href: '/partners' },
                 { label: 'Contact', href: '/contact' },
+                { label: 'Admin', href: '/admin/login' },
               ].map((link) => (
                 <li key={link.href} className="group">
                   <Link 
